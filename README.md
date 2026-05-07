@@ -16,6 +16,7 @@ O objetivo aqui e subir o cluster de forma previsivel com shell script Bash, val
 - [stop-mysql-cluster.sh](X:/DEV/docker/mysql-cluster/stop-mysql-cluster.sh): remove containers do cluster e, por padrao, remove a rede
 - [create-cluster-database.sh](X:/DEV/docker/mysql-cluster/create-cluster-database.sh): cria um database dentro do node SQL do cluster
 - [create-cluster-user.sh](X:/DEV/docker/mysql-cluster/create-cluster-user.sh): cria usuario e grants dentro do node SQL do cluster
+- [.github/workflows/mysql-cluster-validation.yml](X:/DEV/docker/mysql-cluster/.github/workflows/mysql-cluster-validation.yml): workflow de CI para validar cluster, provisioning e acesso da aplicacao
 - [GUIDELINES.md](X:/DEV/docker/mysql-cluster/GUIDELINES.md): referencia original baseada no guia da imagem `mysql/mysql-cluster`
 - [poc-node-cluster](X:/DEV/docker/mysql-cluster/poc-node-cluster/README.md): PoC Node.js para validacao
 
@@ -261,12 +262,34 @@ npm run test:all
 
 ### O que a PoC faz
 
-- cria o banco `cluster_poc` se ele nao existir
+- prepara o acesso ao banco informado
 - valida que o engine `NDBCLUSTER` esta disponivel
 - executa a migration que cria a tabela `cluster_messages`
 - valida a conexao com `sequelize`
-- insere um registro de teste com `sequelize`
+- executa insert, select e delete com raw query
+- executa insert, select e delete com `sequelize`
 - confirma no `information_schema` que a tabela usa `NDBCLUSTER`
+
+## Validacao automatica com GitHub Actions
+
+O projeto inclui a workflow [mysql-cluster-validation.yml](X:/DEV/docker/mysql-cluster/.github/workflows/mysql-cluster-validation.yml), que executa este fluxo:
+
+1. instala as dependencias da PoC Node.js
+2. sobe o cluster com `start-mysql-cluster.sh`
+3. cria um database dedicado para validacao
+4. cria um usuario dedicado para validacao
+5. executa a PoC Node.js com esse usuario
+6. roda migration via `knex`
+7. valida CRUD com raw query
+8. valida CRUD com `sequelize`
+9. derruba o cluster ao final, mesmo se houver falha
+
+Ela e disparada em:
+
+- `push` para `main`
+- `push` para `master`
+- `pull_request`
+- execucao manual com `workflow_dispatch`
 
 ## Configuracao da PoC
 
