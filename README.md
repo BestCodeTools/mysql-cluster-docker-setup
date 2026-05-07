@@ -7,6 +7,12 @@ Este projeto empacota um setup simples de **MySQL Cluster** com:
 - `1` MySQL server node
 - scripts Bash para criar databases e usuarios
 - `1` PoC Node.js para validar conexao com `sequelize` e migration com `knex`
+- `1` PoC C# para validar migrations e CRUD com raw query + EF Core
+- `1` PoC Java para validar migrations e CRUD com JDBC + Hibernate
+- `1` PoC C/C++ para validar migrations e CRUD com Connector/C
+- `1` PoC Go para validar migrations e CRUD com `database/sql` + GORM
+- `1` PoC Python para validar migrations e CRUD com SQLAlchemy Core + ORM
+- `1` PoC Ruby para validar migrations e CRUD com raw query + ActiveRecord
 
 O objetivo aqui e subir o cluster de forma previsivel com shell script Bash, validar que todos os containers ficam `healthy`, e testar uma aplicacao Node.js contra esse ambiente.
 
@@ -19,6 +25,12 @@ O objetivo aqui e subir o cluster de forma previsivel com shell script Bash, val
 - [.github/workflows/mysql-cluster-validation.yml](X:/DEV/docker/mysql-cluster/.github/workflows/mysql-cluster-validation.yml): workflow de CI para validar cluster, provisioning e acesso da aplicacao
 - [GUIDELINES.md](X:/DEV/docker/mysql-cluster/GUIDELINES.md): referencia original baseada no guia da imagem `mysql/mysql-cluster`
 - [poc-node-cluster](X:/DEV/docker/mysql-cluster/poc-node-cluster/README.md): PoC Node.js para validacao
+- [poc-csharp-cluster](X:/DEV/docker/mysql-cluster/poc-csharp-cluster/README.md): PoC C# para validacao
+- [poc-java-cluster](X:/DEV/docker/mysql-cluster/poc-java-cluster/README.md): PoC Java para validacao
+- [poc-cpp-cluster](X:/DEV/docker/mysql-cluster/poc-cpp-cluster/README.md): PoC C/C++ para validacao
+- [poc-go-cluster](X:/DEV/docker/mysql-cluster/poc-go-cluster/README.md): PoC Go para validacao
+- [poc-python-cluster](X:/DEV/docker/mysql-cluster/poc-python-cluster/README.md): PoC Python para validacao
+- [poc-ruby-cluster](X:/DEV/docker/mysql-cluster/poc-ruby-cluster/README.md): PoC Ruby para validacao
 
 ## Requisitos
 
@@ -67,6 +79,7 @@ O script de subida define por padrao:
 - `root`: `ClusterRoot123!`
 - usuario de aplicacao: `cluster_app`
 - senha do usuario de aplicacao: `ClusterApp123!`
+- plugin de autenticacao do usuario de aplicacao: `mysql_native_password`
 
 Observacao importante:
 
@@ -101,6 +114,7 @@ Outras variaveis suportadas no script de subida:
 - `MYSQL_PORT`
 - `PUBLISH_MYSQL_PORT`
 - `STOP_FIVEM_MYSQL`
+- `APP_DB_AUTH_PLUGIN`
 
 Exemplo sem publicar a porta `3306`:
 
@@ -180,6 +194,7 @@ Variaveis suportadas:
 - `MYSQL_ROOT_PASSWORD`
 - `TARGET_HOST`
 - `GRANT_PRIVILEGES`
+- `AUTH_PLUGIN`
 
 ### Fluxo recomendado
 
@@ -197,6 +212,8 @@ Depois disso, a aplicacao pode apontar para:
 - database: `minha_app`
 - user: `minha_app_user`
 - password: a senha configurada
+
+Por padrao, o script cria usuarios com `mysql_native_password`, o que ajuda na compatibilidade entre drivers de Node.js, .NET, Java e bibliotecas nativas.
 
 ## Como parar e remover o cluster
 
@@ -270,19 +287,138 @@ npm run test:all
 - executa insert, select e delete com `sequelize`
 - confirma no `information_schema` que a tabela usa `NDBCLUSTER`
 
+## Outras PoCs disponiveis
+
+### C#
+
+A PoC [poc-csharp-cluster](X:/DEV/docker/mysql-cluster/poc-csharp-cluster/README.md) valida:
+
+- migration com runner SQL proprio
+- CRUD com `Dapper` + `MySqlConnector`
+- CRUD com `Entity Framework Core`
+
+Uso:
+
+```bash
+cd poc-csharp-cluster
+bash ./run-poc-csharp.sh
+```
+
+### Java
+
+A PoC [poc-java-cluster](X:/DEV/docker/mysql-cluster/poc-java-cluster/README.md) valida:
+
+- migration com `Flyway`
+- CRUD com `JDBC`
+- CRUD com `Hibernate`
+
+Uso:
+
+```bash
+cd poc-java-cluster
+bash ./run-poc-java.sh
+```
+
+### C/C++
+
+A PoC [poc-cpp-cluster](X:/DEV/docker/mysql-cluster/poc-cpp-cluster/README.md) valida:
+
+- migration com runner proprio baseado em arquivos SQL
+- CRUD com Connector/C
+- CRUD via um repository C++ simples
+
+Uso:
+
+```bash
+cd poc-cpp-cluster
+bash ./run-poc-cpp.sh
+```
+
+### Go
+
+A PoC [poc-go-cluster](X:/DEV/docker/mysql-cluster/poc-go-cluster/README.md) valida:
+
+- migration com `goose`
+- CRUD com `database/sql`
+- CRUD com `GORM`
+
+Uso:
+
+```bash
+cd poc-go-cluster
+bash ./run-poc-go.sh
+```
+
+### Python
+
+A PoC [poc-python-cluster](X:/DEV/docker/mysql-cluster/poc-python-cluster/README.md) valida:
+
+- migration com `Alembic`
+- CRUD com SQLAlchemy Core
+- CRUD com SQLAlchemy ORM
+
+Uso:
+
+```bash
+cd poc-python-cluster
+bash ./run-poc-python.sh
+```
+
+### Ruby
+
+A PoC [poc-ruby-cluster](X:/DEV/docker/mysql-cluster/poc-ruby-cluster/README.md) valida:
+
+- migration com `ActiveRecord`
+- CRUD com raw query
+- CRUD com `ActiveRecord`
+
+Uso:
+
+```bash
+cd poc-ruby-cluster
+bash ./run-poc-ruby.sh
+```
+
 ## Validacao automatica com GitHub Actions
 
 O projeto inclui a workflow [mysql-cluster-validation.yml](X:/DEV/docker/mysql-cluster/.github/workflows/mysql-cluster-validation.yml), que executa este fluxo:
 
-1. instala as dependencias da PoC Node.js
-2. sobe o cluster com `start-mysql-cluster.sh`
-3. cria um database dedicado para validacao
-4. cria um usuario dedicado para validacao
-5. executa a PoC Node.js com esse usuario
-6. roda migration via `knex`
-7. valida CRUD com raw query
-8. valida CRUD com `sequelize`
-9. derruba o cluster ao final, mesmo se houver falha
+1. sobe o cluster com `start-mysql-cluster.sh`
+2. cria um database dedicado para validacao
+3. cria um usuario dedicado para validacao
+4. executa cada PoC em uma imagem Docker propria da linguagem
+5. valida migrations e CRUD de todas as linguagens implementadas
+6. derruba o cluster ao final, mesmo se houver falha
+
+Linguagens atualmente cobertas no CI:
+
+- Node.js
+- C#
+- Java
+- C/C++
+- Go
+- Python
+- Ruby
+
+As etapas rodam em imagens Docker por linguagem, por exemplo:
+
+- `node:20-bookworm`
+- `mcr.microsoft.com/dotnet/sdk:8.0`
+- `maven:3.9.9-eclipse-temurin-17`
+- `gcc:14-bookworm`
+- `golang:1.25-bookworm`
+- `python:3.11-bookworm`
+- `ruby:3.3-bookworm`
+
+O objetivo disso e validar o setup em um ambiente mais proximo do que o GitHub Actions realmente executa, sem depender das toolchains instaladas no runner.
+
+Fluxo resumido anterior da PoC Node.js, que continua coberto:
+
+1. executa a PoC Node.js com esse usuario
+2. roda migration via `knex`
+3. valida CRUD com raw query
+4. valida CRUD com `sequelize`
+5. derruba o cluster ao final, mesmo se houver falha
 
 Ela e disparada em:
 
@@ -379,6 +515,9 @@ bash ./create-cluster-user.sh outro_user 'OutraSenha123!' outro_db
 - A migration da PoC cria explicitamente a tabela com `ENGINE=NDBCLUSTER`
 - O cluster foi validado localmente com os 4 containers em estado `healthy`
 - Os scripts de criacao de database e usuario foram validados localmente contra o container `mysql1`
+- A PoC C# foi executada e validada localmente neste host
+- As PoCs Go e Python foram executadas e validadas localmente neste host
+- As PoCs Java, C/C++ e Ruby foram estruturadas e documentadas, mas nao foram executadas aqui porque este host nao tem `mvn`, `g++` nem `ruby` instalados
 
 ## Referencias
 

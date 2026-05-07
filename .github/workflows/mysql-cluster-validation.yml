@@ -24,23 +24,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: poc-node-cluster/package-lock.json
-
       - name: Make scripts executable
         run: |
           chmod +x ./start-mysql-cluster.sh
           chmod +x ./stop-mysql-cluster.sh
           chmod +x ./create-cluster-database.sh
           chmod +x ./create-cluster-user.sh
-
-      - name: Install PoC dependencies
-        working-directory: ./poc-node-cluster
-        run: npm ci
+          chmod +x ./poc-node-cluster/*.sh
+          chmod +x ./poc-csharp-cluster/*.sh
+          chmod +x ./poc-java-cluster/*.sh
+          chmod +x ./poc-cpp-cluster/*.sh
+          chmod +x ./poc-go-cluster/*.sh
+          chmod +x ./poc-python-cluster/*.sh
+          chmod +x ./poc-ruby-cluster/*.sh
 
       - name: Start MySQL Cluster
         run: ./start-mysql-cluster.sh
@@ -54,15 +50,103 @@ jobs:
       - name: Show cluster status
         run: docker run --rm --net cluster mysql/mysql-cluster ndb_mgm -c 192.168.0.2 -e show
 
-      - name: Validate Node.js access, migrations and CRUD
-        working-directory: ./poc-node-cluster
-        env:
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_USER: ${{ env.VALIDATION_DB_USER }}
-          DB_PASSWORD: ${{ env.VALIDATION_DB_PASSWORD }}
-          DB_NAME: ${{ env.VALIDATION_DB_NAME }}
-        run: node ./src/run-all.js
+      - name: Validate Node.js PoC in Docker
+        run: |
+          docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -e DB_HOST=host.docker.internal \
+            -e DB_PORT=3306 \
+            -e DB_USER=${{ env.VALIDATION_DB_USER }} \
+            -e DB_PASSWORD=${{ env.VALIDATION_DB_PASSWORD }} \
+            -e DB_NAME=${{ env.VALIDATION_DB_NAME }} \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace/poc-node-cluster \
+            node:20-bookworm \
+            bash -lc "npm ci && node ./src/run-all.js"
+
+      - name: Validate C# PoC in Docker
+        run: |
+          docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -e DB_HOST=host.docker.internal \
+            -e DB_PORT=3306 \
+            -e DB_USER=${{ env.VALIDATION_DB_USER }} \
+            -e DB_PASSWORD=${{ env.VALIDATION_DB_PASSWORD }} \
+            -e DB_NAME=${{ env.VALIDATION_DB_NAME }} \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace/poc-csharp-cluster \
+            mcr.microsoft.com/dotnet/sdk:8.0 \
+            bash -lc "./run-poc-csharp.sh"
+
+      - name: Validate Java PoC in Docker
+        run: |
+          docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -e DB_HOST=host.docker.internal \
+            -e DB_PORT=3306 \
+            -e DB_USER=${{ env.VALIDATION_DB_USER }} \
+            -e DB_PASSWORD=${{ env.VALIDATION_DB_PASSWORD }} \
+            -e DB_NAME=${{ env.VALIDATION_DB_NAME }} \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace/poc-java-cluster \
+            maven:3.9.9-eclipse-temurin-17 \
+            bash -lc "./run-poc-java.sh"
+
+      - name: Validate C/C++ PoC in Docker
+        run: |
+          docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -e DB_HOST=host.docker.internal \
+            -e DB_PORT=3306 \
+            -e DB_USER=${{ env.VALIDATION_DB_USER }} \
+            -e DB_PASSWORD=${{ env.VALIDATION_DB_PASSWORD }} \
+            -e DB_NAME=${{ env.VALIDATION_DB_NAME }} \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace/poc-cpp-cluster \
+            gcc:14-bookworm \
+            bash -lc "apt-get update && apt-get install -y pkg-config libmariadb-dev && ./run-poc-cpp.sh"
+
+      - name: Validate Go PoC in Docker
+        run: |
+          docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -e DB_HOST=host.docker.internal \
+            -e DB_PORT=3306 \
+            -e DB_USER=${{ env.VALIDATION_DB_USER }} \
+            -e DB_PASSWORD=${{ env.VALIDATION_DB_PASSWORD }} \
+            -e DB_NAME=${{ env.VALIDATION_DB_NAME }} \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace/poc-go-cluster \
+            golang:1.25-bookworm \
+            bash -lc "./run-poc-go.sh"
+
+      - name: Validate Python PoC in Docker
+        run: |
+          docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -e DB_HOST=host.docker.internal \
+            -e DB_PORT=3306 \
+            -e DB_USER=${{ env.VALIDATION_DB_USER }} \
+            -e DB_PASSWORD=${{ env.VALIDATION_DB_PASSWORD }} \
+            -e DB_NAME=${{ env.VALIDATION_DB_NAME }} \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace/poc-python-cluster \
+            python:3.11-bookworm \
+            bash -lc "./run-poc-python.sh"
+
+      - name: Validate Ruby PoC in Docker
+        run: |
+          docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -e DB_HOST=host.docker.internal \
+            -e DB_PORT=3306 \
+            -e DB_USER=${{ env.VALIDATION_DB_USER }} \
+            -e DB_PASSWORD=${{ env.VALIDATION_DB_PASSWORD }} \
+            -e DB_NAME=${{ env.VALIDATION_DB_NAME }} \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace/poc-ruby-cluster \
+            ruby:3.3-bookworm \
+            bash -lc "apt-get update && apt-get install -y build-essential default-libmysqlclient-dev pkg-config && gem install bundler && ./run-poc-ruby.sh"
 
       - name: Print container status on failure
         if: failure()
