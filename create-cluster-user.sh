@@ -9,6 +9,7 @@ DB_PASSWORD="${2:-}"
 TARGET_DATABASE="${3:-*}"
 TARGET_HOST="${TARGET_HOST:-%}"
 GRANT_PRIVILEGES="${GRANT_PRIVILEGES:-ALL PRIVILEGES}"
+AUTH_PLUGIN="${AUTH_PLUGIN:-mysql_native_password}"
 
 log() {
   printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
@@ -29,6 +30,7 @@ Variaveis opcionais:
   MYSQL_ROOT_PASSWORD    Senha do root. Default: ClusterRoot123!
   TARGET_HOST            Host do usuario no MySQL. Default: %
   GRANT_PRIVILEGES       Privilegios concedidos. Default: ALL PRIVILEGES
+  AUTH_PLUGIN            Plugin de autenticacao. Default: mysql_native_password
 
 Exemplos:
   bash ./create-cluster-user.sh app_user 'Senha123!' app_db
@@ -76,7 +78,8 @@ main() {
 
   log "Criando usuario $DB_USER@$TARGET_HOST no container $MYSQL_NAME."
   docker exec "$MYSQL_NAME" mysql -uroot "-p$MYSQL_ROOT_PASSWORD" -e "
-    CREATE USER IF NOT EXISTS '${DB_USER}'@'${TARGET_HOST}' IDENTIFIED BY '${DB_PASSWORD}';
+    CREATE USER IF NOT EXISTS '${DB_USER}'@'${TARGET_HOST}' IDENTIFIED WITH ${AUTH_PLUGIN} BY '${DB_PASSWORD}';
+    ALTER USER '${DB_USER}'@'${TARGET_HOST}' IDENTIFIED WITH ${AUTH_PLUGIN} BY '${DB_PASSWORD}';
     GRANT ${GRANT_PRIVILEGES} ON ${scope} TO '${DB_USER}'@'${TARGET_HOST}';
     FLUSH PRIVILEGES;
   " >/dev/null

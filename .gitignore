@@ -24,3 +24,17 @@ coverage
 *.zip
 *.tar
 *.7z
+bin
+obj
+target
+out
+*.class
+*.o
+*.obj
+*.exe
+CMakeFiles
+CMakeCache.txt
+__pycache__
+.venv
+.bundle
+vendor/bundle

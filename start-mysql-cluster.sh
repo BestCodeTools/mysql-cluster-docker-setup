@@ -21,6 +21,7 @@ MYSQL_PORT="${MYSQL_PORT:-3306}"
 MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-ClusterRoot123!}"
 APP_DB_USER="${APP_DB_USER:-cluster_app}"
 APP_DB_PASSWORD="${APP_DB_PASSWORD:-ClusterApp123!}"
+APP_DB_AUTH_PLUGIN="${APP_DB_AUTH_PLUGIN:-mysql_native_password}"
 PUBLISH_MYSQL_PORT="${PUBLISH_MYSQL_PORT:-true}"
 STOP_FIVEM_MYSQL="${STOP_FIVEM_MYSQL:-true}"
 
@@ -216,7 +217,8 @@ run_mysql_server() {
 configure_app_user() {
   log "Configurando usuario de aplicacao para acesso remoto."
   docker exec "$MYSQL_NAME" mysql -uroot "-p$MYSQL_ROOT_PASSWORD" -e "
-    CREATE USER IF NOT EXISTS '${APP_DB_USER}'@'%' IDENTIFIED BY '${APP_DB_PASSWORD}';
+    CREATE USER IF NOT EXISTS '${APP_DB_USER}'@'%' IDENTIFIED WITH ${APP_DB_AUTH_PLUGIN} BY '${APP_DB_PASSWORD}';
+    ALTER USER '${APP_DB_USER}'@'%' IDENTIFIED WITH ${APP_DB_AUTH_PLUGIN} BY '${APP_DB_PASSWORD}';
     GRANT ALL PRIVILEGES ON *.* TO '${APP_DB_USER}'@'%' WITH GRANT OPTION;
     FLUSH PRIVILEGES;
   " >/dev/null
