@@ -31,7 +31,7 @@ async function main() {
 
   try {
     await sequelize.authenticate();
-    console.log("Sequelize conectou com sucesso ao MySQL Cluster.");
+    console.log("Sequelize connected successfully to MySQL Cluster.");
 
     const [rows] = await sequelize.query(
       "SELECT table_name, engine FROM information_schema.tables WHERE table_schema = ? AND table_name = 'cluster_messages'",
@@ -39,26 +39,26 @@ async function main() {
     );
 
     if (!rows.length) {
-      throw new Error("Tabela cluster_messages nao foi encontrada.");
+      throw new Error("Table cluster_messages was not found.");
     }
 
     const tableName = rows[0].table_name || rows[0].TABLE_NAME;
     const rawEngine = rows[0].engine || rows[0].ENGINE;
     const tableEngine = String(rawEngine).toUpperCase();
 
-    console.log(`Tabela encontrada: ${tableName} usando engine ${tableEngine}.`);
+    console.log(`Table found: ${tableName} using engine ${tableEngine}.`);
 
     if (tableEngine !== "NDBCLUSTER") {
-      throw new Error(`Tabela criada com engine inesperado: ${rawEngine}`);
+      throw new Error(`Table was created with unexpected engine: ${rawEngine}`);
     }
 
     const inserted = await ClusterMessage.create({
-      content: `mensagem criada via sequelize em ${new Date().toISOString()}`
+      content: `message created through sequelize at ${new Date().toISOString()}`
     });
 
     const loaded = await ClusterMessage.findByPk(inserted.id);
     console.log(
-      `Registro validado via Sequelize. id=${loaded.id}, content="${loaded.content}"`
+      `Record validated through Sequelize. id=${loaded.id}, content="${loaded.content}"`
     );
   } finally {
     await sequelize.close();
@@ -66,6 +66,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("Falha no teste do Sequelize:", error.message);
+  console.error("Sequelize test failed:", error.message);
   process.exit(1);
 });

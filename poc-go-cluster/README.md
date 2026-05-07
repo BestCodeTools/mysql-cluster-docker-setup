@@ -1,19 +1,19 @@
-# PoC Go + MySQL Cluster
+# Go PoC + MySQL Cluster
 
-Esta PoC valida:
+This PoC validates:
 
-1. migration com `goose`
-2. CRUD com `database/sql`
-3. CRUD com `GORM`
+1. migrations with `goose`
+2. raw CRUD with `database/sql`
+3. ORM CRUD with `GORM`
 
-## Uso
+## Usage
 
 ```bash
 cd poc-go-cluster
 bash ./run-poc-go.sh
 ```
 
-## Variaveis
+## Variables
 
 ```bash
 DB_HOST=127.0.0.1

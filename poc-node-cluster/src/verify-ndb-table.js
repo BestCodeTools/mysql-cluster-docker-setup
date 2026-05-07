@@ -17,7 +17,7 @@ async function main() {
     );
 
     if (!tables.length) {
-      throw new Error("Tabela cluster_messages nao existe.");
+      throw new Error("Table cluster_messages does not exist.");
     }
 
     const rawEngine = tables[0].engine || tables[0].ENGINE;
@@ -25,17 +25,17 @@ async function main() {
 
     if (tableEngine !== "NDBCLUSTER") {
       throw new Error(
-        `Tabela cluster_messages criada com engine inesperado: ${rawEngine}`
+        `Table cluster_messages was created with unexpected engine: ${rawEngine}`
       );
     }
 
-    console.log("Tabela cluster_messages confirmada com engine NDBCLUSTER.");
+    console.log("Table cluster_messages confirmed with engine NDBCLUSTER.");
   } finally {
     await connection.end();
   }
 }
 
 main().catch((error) => {
-  console.error("Falha na verificacao da tabela:", error.message);
+  console.error("Table verification failed:", error.message);
   process.exit(1);
 });

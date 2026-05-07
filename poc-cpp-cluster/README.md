@@ -1,28 +1,28 @@
-# PoC C/C++ + MySQL Cluster
+# C/C++ PoC + MySQL Cluster
 
-Esta PoC valida:
+This PoC validates:
 
-1. conexao com database ja provisionado
-2. migration propria baseada em arquivos SQL versionados
-3. CRUD com a API nativa do MySQL/MariaDB Connector/C
-4. um pequeno repository C++ em cima da API nativa
+1. access to an already provisioned database
+2. a custom migration runner based on versioned SQL files
+3. raw CRUD with the MySQL/MariaDB Connector/C API
+4. CRUD through a small C++ repository abstraction
 
-## Uso
+## Usage
 
-Em ambiente Linux ou WSL com `g++` e Connector/C instalados:
+On Linux or WSL with `g++` and Connector/C installed:
 
 ```bash
 cd poc-cpp-cluster
 bash ./run-poc-cpp.sh
 ```
 
-## Dependencias esperadas
+## Expected dependencies
 
 - `g++`
 - `pkg-config`
-- `libmariadb-dev` ou `default-libmysqlclient-dev`
+- `libmariadb-dev` or `default-libmysqlclient-dev`
 
-## Variaveis
+## Variables
 
 ```bash
 DB_HOST=127.0.0.1

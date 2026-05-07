@@ -1,104 +1,102 @@
-# MySQL Cluster com Docker
+# MySQL Cluster with Docker
 
-Este projeto empacota um setup simples de **MySQL Cluster** com:
+This repository packages a simple **MySQL Cluster** setup with:
 
 - `1` management node
 - `2` data nodes
 - `1` MySQL server node
-- scripts Bash para criar databases e usuarios
-- `1` PoC Node.js para validar conexao com `sequelize` e migration com `knex`
-- `1` PoC C# para validar migrations e CRUD com raw query + EF Core
-- `1` PoC Java para validar migrations e CRUD com JDBC + Hibernate
-- `1` PoC C/C++ para validar migrations e CRUD com Connector/C
-- `1` PoC Go para validar migrations e CRUD com `database/sql` + GORM
-- `1` PoC Python para validar migrations e CRUD com SQLAlchemy Core + ORM
-- `1` PoC Ruby para validar migrations e CRUD com raw query + ActiveRecord
+- Bash scripts to create databases and users
+- `1` Node.js PoC for `sequelize` + `knex`
+- `1` C# PoC for raw queries + EF Core
+- `1` Java PoC for JDBC + Hibernate
+- `1` C/C++ PoC for Connector/C
+- `1` Go PoC for `database/sql` + GORM
+- `1` Python PoC for SQLAlchemy Core + ORM
+- `1` Ruby PoC for raw queries + ActiveRecord
 
-O objetivo aqui e subir o cluster de forma previsivel com shell script Bash, validar que todos os containers ficam `healthy`, e testar uma aplicacao Node.js contra esse ambiente.
+The goal is to bring the cluster up predictably with Bash scripts, ensure every container reaches `healthy`, and validate application access from multiple languages.
 
-## Estrutura
+## Structure
 
-- [start-mysql-cluster.sh](X:/DEV/docker/mysql-cluster/start-mysql-cluster.sh): sobe o cluster, espera readiness e cria usuario remoto de aplicacao
-- [stop-mysql-cluster.sh](X:/DEV/docker/mysql-cluster/stop-mysql-cluster.sh): remove containers do cluster e, por padrao, remove a rede
-- [create-cluster-database.sh](X:/DEV/docker/mysql-cluster/create-cluster-database.sh): cria um database dentro do node SQL do cluster
-- [create-cluster-user.sh](X:/DEV/docker/mysql-cluster/create-cluster-user.sh): cria usuario e grants dentro do node SQL do cluster
-- [.github/workflows/mysql-cluster-validation.yml](X:/DEV/docker/mysql-cluster/.github/workflows/mysql-cluster-validation.yml): workflow de CI para validar cluster, provisioning e acesso da aplicacao
-- [GUIDELINES.md](X:/DEV/docker/mysql-cluster/GUIDELINES.md): referencia original baseada no guia da imagem `mysql/mysql-cluster`
-- [poc-node-cluster](X:/DEV/docker/mysql-cluster/poc-node-cluster/README.md): PoC Node.js para validacao
-- [poc-csharp-cluster](X:/DEV/docker/mysql-cluster/poc-csharp-cluster/README.md): PoC C# para validacao
-- [poc-java-cluster](X:/DEV/docker/mysql-cluster/poc-java-cluster/README.md): PoC Java para validacao
-- [poc-cpp-cluster](X:/DEV/docker/mysql-cluster/poc-cpp-cluster/README.md): PoC C/C++ para validacao
-- [poc-go-cluster](X:/DEV/docker/mysql-cluster/poc-go-cluster/README.md): PoC Go para validacao
-- [poc-python-cluster](X:/DEV/docker/mysql-cluster/poc-python-cluster/README.md): PoC Python para validacao
-- [poc-ruby-cluster](X:/DEV/docker/mysql-cluster/poc-ruby-cluster/README.md): PoC Ruby para validacao
+- [start-mysql-cluster.sh](X:/DEV/docker/mysql-cluster/start-mysql-cluster.sh): starts the cluster, waits for readiness, and creates a remote application user
+- [stop-mysql-cluster.sh](X:/DEV/docker/mysql-cluster/stop-mysql-cluster.sh): removes cluster containers and, by default, removes the Docker network
+- [create-cluster-database.sh](X:/DEV/docker/mysql-cluster/create-cluster-database.sh): creates a database in the SQL node
+- [create-cluster-user.sh](X:/DEV/docker/mysql-cluster/create-cluster-user.sh): creates a user and grants in the SQL node
+- [.github/workflows/mysql-cluster-validation.yml](X:/DEV/docker/mysql-cluster/.github/workflows/mysql-cluster-validation.yml): CI workflow for cluster provisioning and multi-language validation
+- [GUIDELINES.md](X:/DEV/docker/mysql-cluster/GUIDELINES.md): source guideline derived from the `mysql/mysql-cluster` image docs
+- [poc-node-cluster](X:/DEV/docker/mysql-cluster/poc-node-cluster/README.md)
+- [poc-csharp-cluster](X:/DEV/docker/mysql-cluster/poc-csharp-cluster/README.md)
+- [poc-java-cluster](X:/DEV/docker/mysql-cluster/poc-java-cluster/README.md)
+- [poc-cpp-cluster](X:/DEV/docker/mysql-cluster/poc-cpp-cluster/README.md)
+- [poc-go-cluster](X:/DEV/docker/mysql-cluster/poc-go-cluster/README.md)
+- [poc-python-cluster](X:/DEV/docker/mysql-cluster/poc-python-cluster/README.md)
+- [poc-ruby-cluster](X:/DEV/docker/mysql-cluster/poc-ruby-cluster/README.md)
 
-## Requisitos
+## Requirements
 
-- Docker instalado e funcional
-- Bash disponivel
-  - Exemplo: WSL Ubuntu, Git Bash ou ambiente Linux
-- Porta `3306` livre no host se voce quiser publicar o MySQL externamente
+- Docker installed and working
+- Bash available
+  - Example: WSL Ubuntu, Git Bash, or Linux
+- Port `3306` available if you want to publish MySQL to the host
 
-## Como subir o cluster
+## Start the cluster
 
-Na raiz do projeto:
+From the repository root:
 
 ```bash
 bash ./start-mysql-cluster.sh
 ```
 
-O script faz o seguinte:
+The script does the following:
 
-1. Garante que a imagem `mysql/mysql-cluster` exista localmente
-2. Para o container `fivem_mysql` se ele estiver rodando e se a porta `3306` precisar ser liberada
-3. Remove containers antigos do cluster, se existirem
-4. Cria a rede Docker `cluster`
-5. Sobe `management1`
-6. Sobe `ndb1`
-7. Sobe `ndb2`
-8. Sobe `mysql1`
-9. Aguarda todos ficarem `healthy`
-10. Cria um usuario remoto para a aplicacao
-11. Exibe exemplos para usar os scripts de criacao de database e usuario
+1. Ensures the `mysql/mysql-cluster` image is available locally
+2. Stops the `fivem_mysql` container if needed to free port `3306`
+3. Removes old cluster containers if they exist
+4. Creates the `cluster` Docker network
+5. Starts `management1`
+6. Starts `ndb1`
+7. Starts `ndb2`
+8. Starts `mysql1`
+9. Waits for all containers to become `healthy`
+10. Creates a remote application user
+11. Prints examples for the database and user helper scripts
 
-## Recursos criados
+## Default resources
 
-Por padrao, o cluster sobe com:
+By default the cluster uses:
 
-- Rede Docker: `cluster`
-- Management node: `management1` em `192.168.0.2`
-- Data node 1: `ndb1` em `192.168.0.3`
-- Data node 2: `ndb2` em `192.168.0.4`
-- MySQL server: `mysql1` em `192.168.0.10`
-- Porta publicada no host: `3306`
+- Docker network: `cluster`
+- Management node: `management1` at `192.168.0.2`
+- Data node 1: `ndb1` at `192.168.0.3`
+- Data node 2: `ndb2` at `192.168.0.4`
+- MySQL server: `mysql1` at `192.168.0.10`
+- Published host port: `3306`
 
-## Credenciais padrao
+## Default credentials
 
-O script de subida define por padrao:
+The startup script configures:
 
 - `root`: `ClusterRoot123!`
-- usuario de aplicacao: `cluster_app`
-- senha do usuario de aplicacao: `ClusterApp123!`
-- plugin de autenticacao do usuario de aplicacao: `mysql_native_password`
+- application user: `cluster_app`
+- application password: `ClusterApp123!`
+- authentication plugin: `mysql_native_password`
 
-Observacao importante:
+Important note:
 
-O `root` do container funciona bem para administracao dentro do proprio container, mas para conexoes externas do host a melhor opcao aqui e usar o usuario `cluster_app`, que ja e provisionado pelo script.
+`root` works well for administration inside the container, but for host-side application access the recommended account is `cluster_app`, which the script provisions automatically.
 
-## Variaveis de ambiente uteis
+## Useful environment variables
 
-Voce pode sobrescrever os defaults ao chamar o script.
-
-### Subida
+You can override the defaults when starting the cluster:
 
 ```bash
-MYSQL_ROOT_PASSWORD='OutraSenhaRoot123!'
+MYSQL_ROOT_PASSWORD='AnotherRootPass123!'
 APP_DB_USER='app_user'
 APP_DB_PASSWORD='AppPass123!'
 bash ./start-mysql-cluster.sh
 ```
 
-Outras variaveis suportadas no script de subida:
+Supported startup variables:
 
 - `NETWORK_NAME`
 - `SUBNET_CIDR`
@@ -116,79 +114,79 @@ Outras variaveis suportadas no script de subida:
 - `STOP_FIVEM_MYSQL`
 - `APP_DB_AUTH_PLUGIN`
 
-Exemplo sem publicar a porta `3306`:
+Example without publishing port `3306`:
 
 ```bash
 PUBLISH_MYSQL_PORT=false bash ./start-mysql-cluster.sh
 ```
 
-## Como criar databases e usuarios no cluster
+## Create databases and users
 
-Este projeto inclui dois scripts auxiliares para administracao basica:
+This repository includes two helper scripts:
 
 - [create-cluster-database.sh](X:/DEV/docker/mysql-cluster/create-cluster-database.sh)
 - [create-cluster-user.sh](X:/DEV/docker/mysql-cluster/create-cluster-user.sh)
 
-### Observacao importante sobre onde os comandos rodam
+### Why commands run on `mysql1`
 
-Neste setup, os comandos SQL sao executados diretamente dentro do container `mysql1`, que e o **MySQL server node** do cluster.
+SQL commands are executed directly in `mysql1`, which is the **MySQL server node** for this cluster.
 
-Isso e o comportamento correto aqui porque:
+That is the correct behavior here because:
 
-- `management1` e usado para gerenciamento do cluster, nao para executar SQL da aplicacao
-- `ndb1` e `ndb2` sao data nodes, nao endpoints SQL
-- `mysql1` e o node que aceita conexoes MySQL e propaga o uso do storage engine `NDBCLUSTER` sobre o cluster
+- `management1` is for cluster management, not application SQL
+- `ndb1` and `ndb2` are data nodes, not SQL endpoints
+- `mysql1` is the node that accepts MySQL connections and exposes `NDBCLUSTER`
 
-Ou seja: para criar database, usuario, grants e tabelas, o ponto certo neste projeto e o `mysql1`.
+So for databases, users, grants, and tables, `mysql1` is the right target.
 
-### Criar um database
+### Create a database
 
-Uso basico:
+Basic usage:
 
 ```bash
 bash ./create-cluster-database.sh app_db
 ```
 
-Exemplo com charset/collation customizados:
+Custom charset/collation example:
 
 ```bash
 DB_CHARSET=utf8mb4 DB_COLLATION=utf8mb4_general_ci bash ./create-cluster-database.sh logs_db
 ```
 
-Variaveis suportadas:
+Supported variables:
 
 - `MYSQL_NAME`
 - `MYSQL_ROOT_PASSWORD`
 - `DB_CHARSET`
 - `DB_COLLATION`
 
-### Criar um usuario com grant
+### Create a user with grants
 
-Uso basico:
-
-```bash
-bash ./create-cluster-user.sh app_user 'Senha123!' app_db
-```
-
-Esse comando:
-
-- cria `app_user`
-- define a senha informada
-- concede `ALL PRIVILEGES` em `app_db.*`
-
-Exemplo restringindo o host:
+Basic usage:
 
 ```bash
-TARGET_HOST=127.0.0.1 bash ./create-cluster-user.sh local_user 'Senha123!' app_db
+bash ./create-cluster-user.sh app_user 'Password123!' app_db
 ```
 
-Exemplo com privilegios especificos:
+This command:
+
+- creates `app_user`
+- sets the provided password
+- grants `ALL PRIVILEGES` on `app_db.*`
+
+Restrict host example:
 
 ```bash
-GRANT_PRIVILEGES='SELECT,INSERT,UPDATE,DELETE' bash ./create-cluster-user.sh api_user 'Senha123!' app_db
+TARGET_HOST=127.0.0.1 bash ./create-cluster-user.sh local_user 'Password123!' app_db
 ```
 
-Variaveis suportadas:
+Specific privileges example:
+
+```bash
+GRANT_PRIVILEGES='SELECT,INSERT,UPDATE,DELETE' bash ./create-cluster-user.sh api_user 'Password123!' app_db
+```
+
+Supported variables:
 
 - `MYSQL_NAME`
 - `MYSQL_ROOT_PASSWORD`
@@ -196,201 +194,137 @@ Variaveis suportadas:
 - `GRANT_PRIVILEGES`
 - `AUTH_PLUGIN`
 
-### Fluxo recomendado
-
-Para provisionar um banco de aplicacao do zero:
+### Recommended provisioning flow
 
 ```bash
-bash ./create-cluster-database.sh minha_app
-bash ./create-cluster-user.sh minha_app_user 'MinhaSenha123!' minha_app
+bash ./create-cluster-database.sh my_app
+bash ./create-cluster-user.sh my_app_user 'MyPassword123!' my_app
 ```
 
-Depois disso, a aplicacao pode apontar para:
+Then your application can point to:
 
 - host: `127.0.0.1`
 - port: `3306`
-- database: `minha_app`
-- user: `minha_app_user`
-- password: a senha configurada
+- database: `my_app`
+- user: `my_app_user`
+- password: the configured password
 
-Por padrao, o script cria usuarios com `mysql_native_password`, o que ajuda na compatibilidade entre drivers de Node.js, .NET, Java e bibliotecas nativas.
+By default the script uses `mysql_native_password`, which improves compatibility across Node.js, .NET, Java, and native client libraries.
 
-## Como parar e remover o cluster
+## Stop and remove the cluster
 
-Na raiz do projeto:
+From the repository root:
 
 ```bash
 bash ./stop-mysql-cluster.sh
 ```
 
-O script remove:
+The script removes:
 
 1. `mysql1`
 2. `ndb2`
 3. `ndb1`
 4. `management1`
-5. rede `cluster`
+5. the `cluster` network
 
-Se quiser preservar a rede:
+To keep the network:
 
 ```bash
 REMOVE_NETWORK=false bash ./stop-mysql-cluster.sh
 ```
 
-## Como validar com a PoC Node.js
+## Node.js PoC
 
-A PoC fica em [poc-node-cluster](X:/DEV/docker/mysql-cluster/poc-node-cluster/README.md).
+The Node.js PoC lives in [poc-node-cluster](X:/DEV/docker/mysql-cluster/poc-node-cluster/README.md).
 
-Ela valida tres pontos:
+It validates:
 
-1. Conexao de uma aplicacao Node.js ao cluster usando `sequelize`
-2. Criacao de tabela com `knex migration`
-3. Confirmacao de que a tabela foi criada com `ENGINE=NDBCLUSTER`
+1. Node.js access through `sequelize`
+2. table creation through `knex` migration
+3. confirmation that the table uses `ENGINE=NDBCLUSTER`
+4. CRUD with raw queries
+5. CRUD with `sequelize`
 
-### Instalar dependencias
-
-No Windows, seguindo a preferencia do projeto:
+Windows:
 
 ```bash
 cd poc-node-cluster
 npm.cmd install
+npm.cmd run test:all
 ```
 
-No Linux ou WSL:
+Linux / WSL:
 
 ```bash
 cd poc-node-cluster
 npm install
-```
-
-### Executar a validacao completa
-
-No Windows:
-
-```bash
-npm.cmd run test:all
-```
-
-No Linux ou WSL:
-
-```bash
 npm run test:all
 ```
 
-### O que a PoC faz
-
-- prepara o acesso ao banco informado
-- valida que o engine `NDBCLUSTER` esta disponivel
-- executa a migration que cria a tabela `cluster_messages`
-- valida a conexao com `sequelize`
-- executa insert, select e delete com raw query
-- executa insert, select e delete com `sequelize`
-- confirma no `information_schema` que a tabela usa `NDBCLUSTER`
-
-## Outras PoCs disponiveis
+## Other PoCs
 
 ### C#
 
-A PoC [poc-csharp-cluster](X:/DEV/docker/mysql-cluster/poc-csharp-cluster/README.md) valida:
+[poc-csharp-cluster](X:/DEV/docker/mysql-cluster/poc-csharp-cluster/README.md)
 
-- migration com runner SQL proprio
-- CRUD com `Dapper` + `MySqlConnector`
-- CRUD com `Entity Framework Core`
-
-Uso:
-
-```bash
-cd poc-csharp-cluster
-bash ./run-poc-csharp.sh
-```
+- SQL-file migration runner
+- raw CRUD with `Dapper` + `MySqlConnector`
+- ORM CRUD with `Entity Framework Core`
 
 ### Java
 
-A PoC [poc-java-cluster](X:/DEV/docker/mysql-cluster/poc-java-cluster/README.md) valida:
+[poc-java-cluster](X:/DEV/docker/mysql-cluster/poc-java-cluster/README.md)
 
-- migration com `Flyway`
-- CRUD com `JDBC`
-- CRUD com `Hibernate`
-
-Uso:
-
-```bash
-cd poc-java-cluster
-bash ./run-poc-java.sh
-```
+- migrations with `Flyway`
+- raw CRUD with `JDBC`
+- ORM CRUD with `Hibernate`
 
 ### C/C++
 
-A PoC [poc-cpp-cluster](X:/DEV/docker/mysql-cluster/poc-cpp-cluster/README.md) valida:
+[poc-cpp-cluster](X:/DEV/docker/mysql-cluster/poc-cpp-cluster/README.md)
 
-- migration com runner proprio baseado em arquivos SQL
-- CRUD com Connector/C
-- CRUD via um repository C++ simples
-
-Uso:
-
-```bash
-cd poc-cpp-cluster
-bash ./run-poc-cpp.sh
-```
+- SQL-file migration runner
+- raw CRUD with Connector/C
+- CRUD through a small C++ repository
 
 ### Go
 
-A PoC [poc-go-cluster](X:/DEV/docker/mysql-cluster/poc-go-cluster/README.md) valida:
+[poc-go-cluster](X:/DEV/docker/mysql-cluster/poc-go-cluster/README.md)
 
-- migration com `goose`
-- CRUD com `database/sql`
-- CRUD com `GORM`
-
-Uso:
-
-```bash
-cd poc-go-cluster
-bash ./run-poc-go.sh
-```
+- migrations with `goose`
+- raw CRUD with `database/sql`
+- ORM CRUD with `GORM`
 
 ### Python
 
-A PoC [poc-python-cluster](X:/DEV/docker/mysql-cluster/poc-python-cluster/README.md) valida:
+[poc-python-cluster](X:/DEV/docker/mysql-cluster/poc-python-cluster/README.md)
 
-- migration com `Alembic`
-- CRUD com SQLAlchemy Core
-- CRUD com SQLAlchemy ORM
-
-Uso:
-
-```bash
-cd poc-python-cluster
-bash ./run-poc-python.sh
-```
+- migrations with `Alembic`
+- raw CRUD with SQLAlchemy Core
+- ORM CRUD with SQLAlchemy ORM
 
 ### Ruby
 
-A PoC [poc-ruby-cluster](X:/DEV/docker/mysql-cluster/poc-ruby-cluster/README.md) valida:
+[poc-ruby-cluster](X:/DEV/docker/mysql-cluster/poc-ruby-cluster/README.md)
 
-- migration com `ActiveRecord`
-- CRUD com raw query
-- CRUD com `ActiveRecord`
+- migrations with `ActiveRecord`
+- raw CRUD with direct SQL
+- ORM CRUD with `ActiveRecord`
 
-Uso:
+## GitHub Actions validation
 
-```bash
-cd poc-ruby-cluster
-bash ./run-poc-ruby.sh
-```
+The workflow [mysql-cluster-validation.yml](X:/DEV/docker/mysql-cluster/.github/workflows/mysql-cluster-validation.yml) validates the full setup in CI.
 
-## Validacao automatica com GitHub Actions
+It:
 
-O projeto inclui a workflow [mysql-cluster-validation.yml](X:/DEV/docker/mysql-cluster/.github/workflows/mysql-cluster-validation.yml), que executa este fluxo:
+1. starts the cluster with `start-mysql-cluster.sh`
+2. creates a validation database
+3. creates a validation user
+4. runs each PoC inside its own language-specific Docker image
+5. validates migrations and CRUD for every implemented language
+6. always tears the cluster down at the end
 
-1. sobe o cluster com `start-mysql-cluster.sh`
-2. cria um database dedicado para validacao
-3. cria um usuario dedicado para validacao
-4. executa cada PoC em uma imagem Docker propria da linguagem
-5. valida migrations e CRUD de todas as linguagens implementadas
-6. derruba o cluster ao final, mesmo se houver falha
-
-Linguagens atualmente cobertas no CI:
+Languages covered in CI:
 
 - Node.js
 - C#
@@ -400,7 +334,7 @@ Linguagens atualmente cobertas no CI:
 - Python
 - Ruby
 
-As etapas rodam em imagens Docker por linguagem, por exemplo:
+Container images used in CI include:
 
 - `node:20-bookworm`
 - `mcr.microsoft.com/dotnet/sdk:8.0`
@@ -410,116 +344,87 @@ As etapas rodam em imagens Docker por linguagem, por exemplo:
 - `python:3.11-bookworm`
 - `ruby:3.3-bookworm`
 
-O objetivo disso e validar o setup em um ambiente mais proximo do que o GitHub Actions realmente executa, sem depender das toolchains instaladas no runner.
+This keeps CI closer to a real multi-language runtime environment without depending on toolchains installed directly on the runner.
 
-Fluxo resumido anterior da PoC Node.js, que continua coberto:
+The workflow runs on:
 
-1. executa a PoC Node.js com esse usuario
-2. roda migration via `knex`
-3. valida CRUD com raw query
-4. valida CRUD com `sequelize`
-5. derruba o cluster ao final, mesmo se houver falha
-
-Ela e disparada em:
-
-- `push` para `main`
-- `push` para `master`
+- `push` to `main`
+- `push` to `master`
 - `pull_request`
-- execucao manual com `workflow_dispatch`
+- manual `workflow_dispatch`
 
-## Configuracao da PoC
+## Manual cluster checks
 
-Defaults da PoC:
-
-- `DB_HOST=127.0.0.1`
-- `DB_PORT=3306`
-- `DB_USER=cluster_app`
-- `DB_PASSWORD=ClusterApp123!`
-- `DB_NAME=cluster_poc`
-
-Exemplo sobrescrevendo:
-
-```bash
-DB_HOST=127.0.0.1 \
-DB_PORT=3306 \
-DB_USER=cluster_app \
-DB_PASSWORD='ClusterApp123!' \
-DB_NAME=cluster_poc \
-npm run test:all
-```
-
-## Como verificar manualmente o status do cluster
-
-### Ver containers
+### Container status
 
 ```bash
 docker ps
 ```
 
-Voce deve ver `management1`, `ndb1`, `ndb2` e `mysql1` com status `healthy`.
+You should see `management1`, `ndb1`, `ndb2`, and `mysql1` with `healthy` status.
 
-### Consultar o management client
+### Management client
 
 ```bash
 docker run --rm --net cluster mysql/mysql-cluster ndb_mgm -c 192.168.0.2 -e show
 ```
 
-Voce deve ver:
+You should see:
 
-- `2` nodes `ndbd(NDB)`
-- `1` node `ndb_mgmd(MGM)`
-- `1` node `mysqld(API)`
+- `2` `ndbd(NDB)` nodes
+- `1` `ndb_mgmd(MGM)` node
+- `1` `mysqld(API)` node
 
-## Problemas comuns
+## Common issues
 
-### So o `mysql1` fica healthy
+### Only `mysql1` becomes healthy
 
-Esse foi justamente o problema resolvido por este projeto. O ponto principal e:
+This repository specifically addresses that case by:
 
-- respeitar a ordem estrita de inicializacao
-- esperar cada container ficar pronto antes de subir o proximo
-- usar verificacoes de health separadas para manager, data nodes e MySQL server
+- respecting the strict startup order
+- waiting for each container before starting the next
+- using different health checks for the manager, data nodes, and MySQL server
 
 ### `Host '_gateway' is not allowed to connect`
 
-Isso acontece ao tentar conectar do host usando `root`. O script ja resolve isso criando `cluster_app@'%'`.
+This happens when trying to connect from the host with `root`. The scripts solve it by creating `cluster_app@'%'`.
 
-### Porta `3306` ocupada
+### Port `3306` is already in use
 
-Se existir outro MySQL rodando, a publicacao da porta pode falhar ou causar conflito. O script tenta parar o container `fivem_mysql` por padrao para liberar essa porta.
+If another MySQL container is running, port publishing can fail. The startup script attempts to stop `fivem_mysql` by default to free that port.
 
-Se preferir nao publicar `3306`, use:
+If you do not want to publish `3306`:
 
 ```bash
 PUBLISH_MYSQL_PORT=false bash ./start-mysql-cluster.sh
 ```
 
-### Quero limpar tudo e subir de novo
+### Start clean
 
 ```bash
 bash ./stop-mysql-cluster.sh
 bash ./start-mysql-cluster.sh
 ```
 
-### Quero criar novos bancos e usuarios depois que o cluster ja esta no ar
+### Add more databases and users later
 
 ```bash
-bash ./create-cluster-database.sh outro_db
-bash ./create-cluster-user.sh outro_user 'OutraSenha123!' outro_db
+bash ./create-cluster-database.sh another_db
+bash ./create-cluster-user.sh another_user 'AnotherPassword123!' another_db
 ```
 
-## Observacoes
+## Notes
 
-- Este setup foi pensado para ambiente local e PoC
-- Os scripts sao idempotentes o suficiente para facilitar reexecucao
-- A migration da PoC cria explicitamente a tabela com `ENGINE=NDBCLUSTER`
-- O cluster foi validado localmente com os 4 containers em estado `healthy`
-- Os scripts de criacao de database e usuario foram validados localmente contra o container `mysql1`
-- A PoC C# foi executada e validada localmente neste host
-- As PoCs Go e Python foram executadas e validadas localmente neste host
-- As PoCs Java, C/C++ e Ruby foram estruturadas e documentadas, mas nao foram executadas aqui porque este host nao tem `mvn`, `g++` nem `ruby` instalados
+- This setup is intended for local development and PoC work
+- The scripts are idempotent enough to make reruns easy
+- Every PoC creates tables explicitly with `ENGINE=NDBCLUSTER`
+- The cluster was validated locally with all four main containers in `healthy`
+- Database and user helper scripts were validated locally against `mysql1`
+- The C# PoC was executed and validated locally on this host
+- The Go and Python PoCs were executed and validated locally on this host
+- The Java, C/C++, and Ruby PoCs were structured for CI validation, but were not executed locally here because this host does not have `mvn`, `g++`, or `ruby`
 
-## Referencias
+## References
 
 - [GUIDELINES.md](X:/DEV/docker/mysql-cluster/GUIDELINES.md)
-- [MySQL Cluster image no Docker Hub](https://hub.docker.com/r/mysql/mysql-cluster)
+- [MySQL Cluster image on Docker Hub](https://hub.docker.com/r/mysql/mysql-cluster)

@@ -55,14 +55,14 @@ container_status() {
 print_logs() {
   local name="$1"
   if container_exists "$name"; then
-    log "Ultimas linhas de log de $name:"
+    log "Latest log lines from $name:"
     docker logs --tail 80 "$name" || true
   fi
 }
 
 on_error() {
   local exit_code="$?"
-  log "Falha ao subir o cluster (codigo $exit_code)."
+  log "Failed to start cluster (exit code $exit_code)."
   for name in "${CLUSTER_CONTAINERS[@]}"; do
     print_logs "$name"
   done
@@ -73,7 +73,7 @@ trap on_error ERR
 
 require_command() {
   command -v "$1" >/dev/null 2>&1 || {
-    printf 'Comando obrigatorio nao encontrado: %s\n' "$1" >&2
+    printf 'Required command not found: %s\n' "$1" >&2
     exit 1
   }
 }
@@ -85,14 +85,14 @@ wait_for_running() {
 
   while (( waited < timeout )); do
     if container_running "$name"; then
-      log "$name esta em execucao."
+      log "$name is running."
       return 0
     fi
     sleep 2
     waited=$((waited + 2))
   done
 
-  log "Timeout aguardando $name entrar em execucao."
+  log "Timed out waiting for $name to start running."
   return 1
 }
 
@@ -107,17 +107,17 @@ wait_for_healthy() {
     health="$(container_health "$name")"
 
     if [[ "$status" != "running" && "$status" != "created" ]]; then
-      log "$name saiu do ar com status '$status'."
+      log "$name stopped with status '$status'."
       return 1
     fi
 
     if [[ "$health" == "healthy" ]]; then
-      log "$name esta healthy."
+      log "$name is healthy."
       return 0
     fi
 
     if [[ "$health" == "unhealthy" ]]; then
-      log "$name ficou unhealthy."
+      log "$name became unhealthy."
       return 1
     fi
 
@@ -125,22 +125,22 @@ wait_for_healthy() {
     waited=$((waited + 3))
   done
 
-  log "Timeout aguardando healthcheck de $name."
+  log "Timed out waiting for healthcheck on $name."
   return 1
 }
 
 ensure_network() {
   if docker network inspect "$NETWORK_NAME" >/dev/null 2>&1; then
-    log "Rede $NETWORK_NAME ja existe."
+    log "Network $NETWORK_NAME already exists."
     return 0
   fi
 
-  log "Criando rede $NETWORK_NAME ($SUBNET_CIDR)."
+  log "Creating network $NETWORK_NAME ($SUBNET_CIDR)."
   docker network create "$NETWORK_NAME" --subnet "$SUBNET_CIDR" >/dev/null
 }
 
 cleanup_cluster() {
-  log "Removendo containers antigos do cluster, se existirem."
+  log "Removing old cluster containers if they exist."
   for name in "${CLUSTER_CONTAINERS[@]}"; do
     if container_exists "$name"; then
       docker rm -f "$name" >/dev/null
@@ -154,13 +154,13 @@ stop_fivem_mysql_if_needed() {
   fi
 
   if container_exists "fivem_mysql" && container_running "fivem_mysql"; then
-    log "Parando container fivem_mysql para liberar a porta $MYSQL_PORT."
+    log "Stopping fivem_mysql to free port $MYSQL_PORT."
     docker stop fivem_mysql >/dev/null
   fi
 }
 
 run_manager() {
-  log "Subindo o management node."
+  log "Starting management node."
   docker run -d \
     --net "$NETWORK_NAME" \
     --name "$MANAGER_NAME" \
@@ -178,7 +178,7 @@ run_data_node() {
   local name="$1"
   local ip="$2"
 
-  log "Subindo data node $name."
+  log "Starting data node $name."
   docker run -d \
     --net "$NETWORK_NAME" \
     --name "$name" \
@@ -198,7 +198,7 @@ run_mysql_server() {
     port_args=(-p "$MYSQL_PORT:3306")
   fi
 
-  log "Subindo o servidor MySQL."
+  log "Starting MySQL server."
   docker run -d \
     --net "$NETWORK_NAME" \
     --name "$MYSQL_NAME" \
@@ -215,7 +215,7 @@ run_mysql_server() {
 }
 
 configure_app_user() {
-  log "Configurando usuario de aplicacao para acesso remoto."
+  log "Configuring remote application user."
   docker exec "$MYSQL_NAME" mysql -uroot "-p$MYSQL_ROOT_PASSWORD" -e "
     CREATE USER IF NOT EXISTS '${APP_DB_USER}'@'%' IDENTIFIED WITH ${APP_DB_AUTH_PLUGIN} BY '${APP_DB_PASSWORD}';
     ALTER USER '${APP_DB_USER}'@'%' IDENTIFIED WITH ${APP_DB_AUTH_PLUGIN} BY '${APP_DB_PASSWORD}';
@@ -225,13 +225,13 @@ configure_app_user() {
 }
 
 show_cluster_status() {
-  log "Status final do cluster:"
+  log "Final cluster status:"
   docker run --rm --net "$NETWORK_NAME" "$IMAGE_NAME" \
     ndb_mgm -c "$MANAGER_IP" -e show
 }
 
 show_summary() {
-  log "Resumo dos containers:"
+  log "Container summary:"
   docker ps --filter "name=^/${MANAGER_NAME}$" \
             --filter "name=^/${NDB1_NAME}$" \
             --filter "name=^/${NDB2_NAME}$" \
@@ -242,7 +242,7 @@ show_summary() {
 main() {
   require_command docker
 
-  log "Validando imagem $IMAGE_NAME."
+  log "Validating image $IMAGE_NAME."
   docker image inspect "$IMAGE_NAME" >/dev/null 2>&1 || docker pull "$IMAGE_NAME" >/dev/null
 
   stop_fivem_mysql_if_needed
@@ -269,12 +269,12 @@ main() {
   show_summary
   show_cluster_status
 
-  log "Cluster pronto."
-  log "Root password atual: $MYSQL_ROOT_PASSWORD"
-  log "Usuario de app: $APP_DB_USER"
-  log "Senha do usuario de app: $APP_DB_PASSWORD"
-  log "Exemplo para criar database: bash ./create-cluster-database.sh app_db"
-  log "Exemplo para criar usuario: bash ./create-cluster-user.sh app_user 'Senha123!' app_db"
+  log "Cluster is ready."
+  log "Current root password: $MYSQL_ROOT_PASSWORD"
+  log "Application user: $APP_DB_USER"
+  log "Application user password: $APP_DB_PASSWORD"
+  log "Example to create a database: bash ./create-cluster-database.sh app_db"
+  log "Example to create a user: bash ./create-cluster-user.sh app_user 'Password123!' app_db"
 }
 
 main "$@"

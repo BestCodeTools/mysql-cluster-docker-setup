@@ -1,22 +1,22 @@
-# PoC C# + MySQL Cluster
+# C# PoC + MySQL Cluster
 
-Esta PoC valida:
+This PoC validates:
 
-1. conexao com um database ja provisionado no cluster
-2. migration com runner proprio baseado em arquivos SQL versionados
-3. CRUD com raw query usando `Dapper` + `MySqlConnector`
-4. CRUD com `Entity Framework Core`
+1. access to a database already provisioned in the cluster
+2. migrations with a versioned SQL-file runner
+3. raw CRUD with `Dapper` + `MySqlConnector`
+4. ORM CRUD with `Entity Framework Core`
 
-## Uso
+## Usage
 
-Com o cluster rodando e um database/usuario ja criados:
+With the cluster running and a database/user already created:
 
 ```bash
 cd poc-csharp-cluster
 bash ./run-poc-csharp.sh
 ```
 
-## Variaveis
+## Variables
 
 ```bash
 DB_HOST=127.0.0.1

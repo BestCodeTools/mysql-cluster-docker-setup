@@ -19,11 +19,11 @@ async function main() {
     );
 
     if (!ndbEngine || ndbEngine.Support === "NO") {
-      throw new Error("Engine NDBCLUSTER nao esta disponivel neste servidor.");
+      throw new Error("Engine NDBCLUSTER is not available on this server.");
     }
 
     console.log(
-      `Banco ${DB_NAME} pronto e engine NDBCLUSTER disponivel (${ndbEngine.Support}).`
+      `Database ${DB_NAME} is ready and engine NDBCLUSTER is available (${ndbEngine.Support}).`
     );
   } finally {
     await connection.end();
@@ -31,6 +31,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("Falha ao preparar o banco:", error.message);
+  console.error("Failed to prepare database:", error.message);
   process.exit(1);
 });

@@ -10,7 +10,7 @@ function normalizeTableMetadata(row) {
 }
 
 async function runRawQueryChecks(connection) {
-  console.log("Executando validacoes com raw query.");
+  console.log("Running raw query validations.");
 
   await connection.query("DELETE FROM cluster_messages");
 
@@ -27,7 +27,7 @@ async function runRawQueryChecks(connection) {
   );
 
   if (!selectedRows.length || selectedRows[0].content !== rawContent) {
-    throw new Error("Falha ao consultar o registro inserido via raw query.");
+    throw new Error("Failed to read the record inserted via raw query.");
   }
 
   await connection.query("DELETE FROM cluster_messages WHERE id = ?", [rawId]);
@@ -38,14 +38,14 @@ async function runRawQueryChecks(connection) {
   );
 
   if (Number(remainingRows[0].total) !== 0) {
-    throw new Error("Falha ao excluir o registro via raw query.");
+    throw new Error("Failed to delete the record via raw query.");
   }
 
-  console.log(`Raw query validada com sucesso. id=${rawId}`);
+  console.log(`Raw query validation succeeded. id=${rawId}`);
 }
 
 async function runSequelizeChecks(sequelize) {
-  console.log("Executando validacoes com Sequelize.");
+  console.log("Running Sequelize validations.");
 
   const ClusterMessage = sequelize.define(
     "ClusterMessage",
@@ -74,17 +74,17 @@ async function runSequelizeChecks(sequelize) {
   const loaded = await ClusterMessage.findByPk(inserted.id);
 
   if (!loaded || loaded.content !== sequelizeContent) {
-    throw new Error("Falha ao consultar o registro inserido via Sequelize.");
+    throw new Error("Failed to read the record inserted via Sequelize.");
   }
 
   await loaded.destroy();
 
   const deleted = await ClusterMessage.findByPk(inserted.id);
   if (deleted) {
-    throw new Error("Falha ao excluir o registro via Sequelize.");
+    throw new Error("Failed to delete the record via Sequelize.");
   }
 
-  console.log(`Sequelize validado com sucesso. id=${inserted.id}`);
+  console.log(`Sequelize validation succeeded. id=${inserted.id}`);
 }
 
 async function main() {
@@ -110,20 +110,20 @@ async function main() {
     );
 
     if (!rows.length) {
-      throw new Error("Tabela cluster_messages nao foi encontrada.");
+      throw new Error("Table cluster_messages was not found.");
     }
 
     const metadata = normalizeTableMetadata(rows[0]);
     if (metadata.engine !== "NDBCLUSTER") {
-      throw new Error(`Tabela criada com engine inesperado: ${metadata.engine}`);
+      throw new Error(`Table was created with unexpected engine: ${metadata.engine}`);
     }
 
     console.log(
-      `Tabela confirmada para integracao: ${metadata.tableName} com engine ${metadata.engine}.`
+      `Table confirmed for integration: ${metadata.tableName} using engine ${metadata.engine}.`
     );
 
     await sequelize.authenticate();
-    console.log("Sequelize autenticado com usuario customizado.");
+    console.log("Sequelize authenticated with the custom user.");
 
     await runRawQueryChecks(connection);
     await runSequelizeChecks(sequelize);
@@ -133,6 +133,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("Falha no teste de integracao:", error.message);
+  console.error("Integration test failed:", error.message);
   process.exit(1);
 });

@@ -17,7 +17,7 @@ import java.util.Properties;
 public final class App {
     public static void main(String[] args) throws Exception {
         ClusterConfig config = ClusterConfig.load();
-        System.out.println("Iniciando PoC Java contra " + config.getHost() + ":" + config.getPort() + "/" + config.getDatabase());
+        System.out.println("Starting Java PoC against " + config.getHost() + ":" + config.getPort() + "/" + config.getDatabase());
 
         try (Connection connection = DriverManager.getConnection(
             config.getJdbcUrl(),
@@ -30,7 +30,7 @@ public final class App {
         }
 
         runHibernateChecks(config);
-        System.out.println("PoC Java validada com sucesso.");
+        System.out.println("Java PoC validated successfully.");
     }
 
     private static void validateNdbEngine(Connection connection) throws Exception {
@@ -46,13 +46,13 @@ public final class App {
             }
 
             if (!found) {
-                throw new IllegalStateException("Engine NDBCLUSTER nao esta disponivel.");
+                throw new IllegalStateException("Engine NDBCLUSTER is not available.");
             }
         }
     }
 
     private static void runMigrations(ClusterConfig config) {
-        System.out.println("Executando migration com Flyway.");
+        System.out.println("Running migration with Flyway.");
         Flyway.configure()
             .dataSource(config.getJdbcUrl(), config.getUser(), config.getPassword())
             .table("schema_history_java")
@@ -61,7 +61,7 @@ public final class App {
     }
 
     private static void runJdbcChecks(Connection connection) throws Exception {
-        System.out.println("Executando CRUD com JDBC.");
+        System.out.println("Running CRUD with JDBC.");
         try (Statement cleanup = connection.createStatement()) {
             cleanup.executeUpdate("DELETE FROM java_cluster_messages");
         }
@@ -77,7 +77,7 @@ public final class App {
 
             try (ResultSet generatedKeys = insert.getGeneratedKeys()) {
                 if (!generatedKeys.next()) {
-                    throw new IllegalStateException("Falha ao recuperar id do insert JDBC.");
+                    throw new IllegalStateException("Failed to retrieve the inserted JDBC id.");
                 }
                 insertedId = generatedKeys.getLong(1);
             }
@@ -88,7 +88,7 @@ public final class App {
             select.setLong(1, insertedId);
             try (ResultSet resultSet = select.executeQuery()) {
                 if (!resultSet.next() || !content.equals(resultSet.getString(1))) {
-                    throw new IllegalStateException("Falha ao ler registro inserido via JDBC.");
+                    throw new IllegalStateException("Failed to read the record inserted via JDBC.");
                 }
             }
         }
@@ -99,11 +99,11 @@ public final class App {
             delete.executeUpdate();
         }
 
-        System.out.println("JDBC validado. id=" + insertedId);
+        System.out.println("JDBC validated. id=" + insertedId);
     }
 
     private static void runHibernateChecks(ClusterConfig config) {
-        System.out.println("Executando CRUD com Hibernate.");
+        System.out.println("Running CRUD with Hibernate.");
 
         Properties properties = new Properties();
         properties.setProperty("hibernate.connection.driver_class", "com.mysql.cj.jdbc.Driver");
@@ -138,7 +138,7 @@ public final class App {
             ClusterMessage loaded = readSession.get(ClusterMessage.class, message.getId());
             if (loaded == null || !content.equals(loaded.getContent())) {
                 readSession.close();
-                throw new IllegalStateException("Falha ao ler registro inserido via Hibernate.");
+                throw new IllegalStateException("Failed to read the record inserted via Hibernate.");
             }
             readSession.close();
 
@@ -149,7 +149,7 @@ public final class App {
             deleteTx.commit();
             deleteSession.close();
 
-            System.out.println("Hibernate validado. id=" + message.getId());
+            System.out.println("Hibernate validated. id=" + message.getId());
         }
     }
 }

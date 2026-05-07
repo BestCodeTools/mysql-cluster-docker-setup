@@ -1,19 +1,19 @@
-# PoC Ruby + MySQL Cluster
+# Ruby PoC + MySQL Cluster
 
-Esta PoC valida:
+This PoC validates:
 
-1. migration com `ActiveRecord`
-2. CRUD com raw query
-3. CRUD com `ActiveRecord`
+1. migrations with `ActiveRecord`
+2. raw CRUD with direct SQL
+3. ORM CRUD with `ActiveRecord`
 
-## Uso
+## Usage
 
 ```bash
 cd poc-ruby-cluster
 bash ./run-poc-ruby.sh
 ```
 
-## Variaveis
+## Variables
 
 ```bash
 DB_HOST=127.0.0.1

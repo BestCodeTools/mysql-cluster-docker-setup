@@ -2,7 +2,7 @@
   "name": "poc-node-cluster",
   "version": "1.0.0",
   "private": true,
-  "description": "PoC simples para validar MySQL Cluster com Sequelize e Knex.",
+  "description": "Simple PoC to validate MySQL Cluster with Sequelize and Knex.",
   "main": "src/sequelize-check.js",
   "scripts": {
     "db:prepare": "node ./src/prepare-database.js",

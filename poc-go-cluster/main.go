@@ -37,7 +37,7 @@ func (clusterMessage) TableName() string {
 
 func main() {
 	config := loadConfig()
-	log.Printf("Iniciando PoC Go contra %s:%d/%s.", config.Host, config.Port, config.Database)
+	log.Printf("Starting Go PoC against %s:%d/%s.", config.Host, config.Port, config.Database)
 
 	db, err := sql.Open("mysql", config.dsn())
 	if err != nil {
@@ -65,7 +65,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println("PoC Go validada com sucesso.")
+	log.Println("Go PoC validated successfully.")
 }
 
 func loadConfig() clusterConfig {
@@ -110,23 +110,23 @@ func validateNdbEngine(db *sql.DB) error {
 		}
 
 		if strings.EqualFold(engine, "NDBCLUSTER") && !strings.EqualFold(support, "NO") {
-			log.Printf("Engine NDBCLUSTER disponivel (%s).", support)
+			log.Printf("Engine NDBCLUSTER available (%s).", support)
 			return nil
 		}
 	}
 
-	return fmt.Errorf("engine NDBCLUSTER nao esta disponivel")
+	return fmt.Errorf("engine NDBCLUSTER is not available")
 }
 
 func runMigrations(db *sql.DB) error {
-	log.Println("Executando migration com goose.")
+	log.Println("Running migration with goose.")
 	goose.SetDialect("mysql")
 	migrationsDir := filepath.Join(".", "migrations")
 	return goose.Up(db, migrationsDir)
 }
 
 func runRawChecks(db *sql.DB) error {
-	log.Println("Executando CRUD com database/sql.")
+	log.Println("Running CRUD with database/sql.")
 	if _, err := db.Exec("DELETE FROM go_cluster_messages"); err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func runRawChecks(db *sql.DB) error {
 	}
 
 	if loadedContent != content {
-		return fmt.Errorf("falha ao ler registro inserido via database/sql")
+		return fmt.Errorf("failed to read the record inserted via database/sql")
 	}
 
 	if _, err := db.Exec("DELETE FROM go_cluster_messages WHERE id = ?", insertedID); err != nil {
@@ -167,15 +167,15 @@ func runRawChecks(db *sql.DB) error {
 	}
 
 	if count != 0 {
-		return fmt.Errorf("falha ao excluir registro via database/sql")
+		return fmt.Errorf("failed to delete the record via database/sql")
 	}
 
-	log.Printf("database/sql validado. id=%d", insertedID)
+	log.Printf("database/sql validated. id=%d", insertedID)
 	return nil
 }
 
 func runGormChecks(config clusterConfig) error {
-	log.Println("Executando CRUD com GORM.")
+	log.Println("Running CRUD with GORM.")
 
 	gormDB, err := gorm.Open(gormmysql.Open(config.dsn()), &gorm.Config{})
 	if err != nil {
@@ -198,7 +198,7 @@ func runGormChecks(config clusterConfig) error {
 	}
 
 	if loaded.Content != content {
-		return fmt.Errorf("falha ao ler registro inserido via GORM")
+		return fmt.Errorf("failed to read the record inserted via GORM")
 	}
 
 	if err := gormDB.Delete(&loaded).Error; err != nil {
@@ -211,10 +211,10 @@ func runGormChecks(config clusterConfig) error {
 	}
 
 	if count != 0 {
-		return fmt.Errorf("falha ao excluir registro via GORM")
+		return fmt.Errorf("failed to delete the record via GORM")
 	}
 
-	log.Printf("GORM validado. id=%d", message.ID)
+	log.Printf("GORM validated. id=%d", message.ID)
 	return nil
 }
 

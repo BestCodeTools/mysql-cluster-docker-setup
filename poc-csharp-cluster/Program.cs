@@ -10,7 +10,7 @@ internal static class Program
     private static async Task Main()
     {
         var config = ClusterConfig.Load();
-        Console.WriteLine($"Iniciando PoC C# contra {config.Host}:{config.Port}/{config.Database}.");
+        Console.WriteLine($"Starting C# PoC against {config.Host}:{config.Port}/{config.Database}.");
 
         await using var connection = new MySqlConnection(config.ConnectionString);
         await connection.OpenAsync();
@@ -20,7 +20,7 @@ internal static class Program
         await RunRawChecksAsync(connection);
         await RunEntityFrameworkChecksAsync(config);
 
-        Console.WriteLine("PoC C# validada com sucesso.");
+        Console.WriteLine("C# PoC validated successfully.");
     }
 
     private static async Task ValidateNdbEngineAsync(MySqlConnection connection)
@@ -31,15 +31,15 @@ internal static class Program
 
         if (string.IsNullOrWhiteSpace(ndb.Engine) || string.Equals(ndb.Support, "NO", StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException("Engine NDBCLUSTER nao esta disponivel.");
+            throw new InvalidOperationException("Engine NDBCLUSTER is not available.");
         }
 
-        Console.WriteLine($"Engine NDBCLUSTER disponivel ({ndb.Support}).");
+        Console.WriteLine($"Engine NDBCLUSTER available ({ndb.Support}).");
     }
 
     private static void RunMigrations(ClusterConfig config)
     {
-        Console.WriteLine("Executando migrations C# com runner proprio.");
+        Console.WriteLine("Running C# migrations with the local SQL runner.");
         using var connection = new MySqlConnection(config.ConnectionString);
         connection.Open();
 
@@ -64,7 +64,7 @@ internal static class Program
 
             if (alreadyApplied > 0)
             {
-                Console.WriteLine($"Migration ja aplicada: {version}");
+                Console.WriteLine($"Migration already applied: {version}");
                 continue;
             }
 
@@ -76,13 +76,13 @@ internal static class Program
                 "INSERT INTO schema_migrations_csharp (version) VALUES (@Version)",
                 new { Version = version });
 
-            Console.WriteLine($"Migration aplicada: {version}");
+            Console.WriteLine($"Migration applied: {version}");
         }
     }
 
     private static async Task RunRawChecksAsync(MySqlConnection connection)
     {
-        Console.WriteLine("Executando CRUD com raw query.");
+        Console.WriteLine("Running raw query CRUD.");
 
         await connection.ExecuteAsync("DELETE FROM csharp_cluster_messages");
 
@@ -97,7 +97,7 @@ internal static class Program
 
         if (loaded is null || loaded.Content != content)
         {
-            throw new InvalidOperationException("Falha ao ler o registro inserido via raw query.");
+            throw new InvalidOperationException("Failed to read the record inserted via raw query.");
         }
 
         await connection.ExecuteAsync(
@@ -110,15 +110,15 @@ internal static class Program
 
         if (exists != 0)
         {
-            throw new InvalidOperationException("Falha ao excluir o registro via raw query.");
+            throw new InvalidOperationException("Failed to delete the record via raw query.");
         }
 
-        Console.WriteLine($"Raw query validada. id={insertId}");
+        Console.WriteLine($"Raw query validated. id={insertId}");
     }
 
     private static async Task RunEntityFrameworkChecksAsync(ClusterConfig config)
     {
-        Console.WriteLine("Executando CRUD com Entity Framework Core.");
+        Console.WriteLine("Running Entity Framework Core CRUD.");
 
         await using var dbContext = new ClusterDbContext(config);
         await dbContext.Database.OpenConnectionAsync();
@@ -134,7 +134,7 @@ internal static class Program
         var loaded = await dbContext.ClusterMessages.SingleOrDefaultAsync(item => item.Id == message.Id);
         if (loaded is null || loaded.Content != content)
         {
-            throw new InvalidOperationException("Falha ao ler o registro inserido via Entity Framework Core.");
+            throw new InvalidOperationException("Failed to read the record inserted via Entity Framework Core.");
         }
 
         dbContext.ClusterMessages.Remove(loaded);
@@ -143,9 +143,9 @@ internal static class Program
         var deleted = await dbContext.ClusterMessages.SingleOrDefaultAsync(item => item.Id == message.Id);
         if (deleted is not null)
         {
-            throw new InvalidOperationException("Falha ao excluir o registro via Entity Framework Core.");
+            throw new InvalidOperationException("Failed to delete the record via Entity Framework Core.");
         }
 
-        Console.WriteLine($"Entity Framework Core validado. id={message.Id}");
+        Console.WriteLine($"Entity Framework Core validated. id={message.Id}");
     }
 }

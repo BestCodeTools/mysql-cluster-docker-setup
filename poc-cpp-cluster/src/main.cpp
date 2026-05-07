@@ -37,7 +37,7 @@ class MysqlConnection {
   explicit MysqlConnection(const ClusterConfig& config) {
     handle_ = mysql_init(nullptr);
     if (handle_ == nullptr) {
-      throw std::runtime_error("Falha ao inicializar MYSQL.");
+      throw std::runtime_error("Failed to initialize MYSQL.");
     }
 
     if (mysql_real_connect(
@@ -81,7 +81,7 @@ void exec_or_throw(MYSQL* handle, const std::string& sql) {
 std::string load_file(const std::filesystem::path& path) {
   std::ifstream input(path);
   if (!input.is_open()) {
-    throw std::runtime_error("Falha ao abrir migration: " + path.string());
+    throw std::runtime_error("Failed to open migration: " + path.string());
   }
 
   std::ostringstream buffer;
@@ -93,7 +93,7 @@ void validate_ndb_engine(MYSQL* handle) {
   exec_or_throw(handle, "SHOW ENGINES");
   MYSQL_RES* result = mysql_store_result(handle);
   if (result == nullptr) {
-    throw std::runtime_error("Falha ao ler engines do MySQL.");
+    throw std::runtime_error("Failed to read MySQL engines.");
   }
 
   bool found = false;
@@ -109,12 +109,12 @@ void validate_ndb_engine(MYSQL* handle) {
   mysql_free_result(result);
 
   if (!found) {
-    throw std::runtime_error("Engine NDBCLUSTER nao esta disponivel.");
+    throw std::runtime_error("Engine NDBCLUSTER is not available.");
   }
 }
 
 void run_migrations(MYSQL* handle, const std::filesystem::path& base_dir) {
-  std::cout << "Executando migrations C++." << std::endl;
+  std::cout << "Running C++ migrations." << std::endl;
   exec_or_throw(
       handle,
       "CREATE TABLE IF NOT EXISTS schema_migrations_cpp (version VARCHAR(255) PRIMARY KEY)");
@@ -141,7 +141,7 @@ void run_migrations(MYSQL* handle, const std::filesystem::path& base_dir) {
 }
 
 void run_raw_checks(MYSQL* handle) {
-  std::cout << "Executando CRUD raw C++." << std::endl;
+  std::cout << "Running raw C++ CRUD." << std::endl;
   exec_or_throw(handle, "DELETE FROM cpp_cluster_messages");
 
   const auto content = std::string("raw c++");
@@ -157,14 +157,14 @@ void run_raw_checks(MYSQL* handle) {
   MYSQL_ROW row = mysql_fetch_row(result);
   if (row == nullptr || row[0] == nullptr || content != row[0]) {
     mysql_free_result(result);
-    throw std::runtime_error("Falha ao ler registro inserido via raw C++.");
+    throw std::runtime_error("Failed to read the record inserted via raw C++.");
   }
   mysql_free_result(result);
 
   exec_or_throw(
       handle,
       "DELETE FROM cpp_cluster_messages WHERE id = " + std::to_string(inserted_id));
-  std::cout << "CRUD raw validado. id=" << inserted_id << std::endl;
+  std::cout << "Raw CRUD validated. id=" << inserted_id << std::endl;
 }
 
 class ClusterMessageRepository {
@@ -194,7 +194,7 @@ class ClusterMessageRepository {
 };
 
 void run_repository_checks(MYSQL* handle) {
-  std::cout << "Executando CRUD via repository C++." << std::endl;
+  std::cout << "Running CRUD through the C++ repository." << std::endl;
   exec_or_throw(handle, "DELETE FROM cpp_cluster_messages");
 
   ClusterMessageRepository repository(handle);
@@ -202,16 +202,16 @@ void run_repository_checks(MYSQL* handle) {
   const auto id = repository.create(content);
   const auto loaded = repository.find_content(id);
   if (loaded != content) {
-    throw std::runtime_error("Falha ao ler registro via repository C++.");
+    throw std::runtime_error("Failed to read the record through the C++ repository.");
   }
 
   repository.remove(id);
   const auto deleted = repository.find_content(id);
   if (!deleted.empty()) {
-    throw std::runtime_error("Falha ao excluir registro via repository C++.");
+    throw std::runtime_error("Failed to delete the record through the C++ repository.");
   }
 
-  std::cout << "Repository validado. id=" << id << std::endl;
+  std::cout << "Repository validated. id=" << id << std::endl;
 }
 }  // namespace
 
@@ -221,7 +221,7 @@ int main(int argc, char** argv) {
     const auto executable_path = std::filesystem::absolute(argv[0]).parent_path().parent_path();
     MysqlConnection connection(config);
 
-    std::cout << "Iniciando PoC C/C++ contra " << config.host << ":" << config.port << "/"
+    std::cout << "Starting C/C++ PoC against " << config.host << ":" << config.port << "/"
               << config.database << std::endl;
 
     validate_ndb_engine(connection.get());
@@ -229,10 +229,10 @@ int main(int argc, char** argv) {
     run_raw_checks(connection.get());
     run_repository_checks(connection.get());
 
-    std::cout << "PoC C/C++ validada com sucesso." << std::endl;
+    std::cout << "C/C++ PoC validated successfully." << std::endl;
     return 0;
   } catch (const std::exception& error) {
-    std::cerr << "Falha na PoC C/C++: " << error.what() << std::endl;
+    std::cerr << "C/C++ PoC failed: " << error.what() << std::endl;
     return 1;
   }
 }

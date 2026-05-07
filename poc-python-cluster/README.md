@@ -1,19 +1,19 @@
-# PoC Python + MySQL Cluster
+# Python PoC + MySQL Cluster
 
-Esta PoC valida:
+This PoC validates:
 
-1. migration com `Alembic`
-2. CRUD com SQLAlchemy Core
-3. CRUD com SQLAlchemy ORM
+1. migrations with `Alembic`
+2. raw CRUD with SQLAlchemy Core
+3. ORM CRUD with SQLAlchemy ORM
 
-## Uso
+## Usage
 
 ```bash
 cd poc-python-cluster
 bash ./run-poc-python.sh
 ```
 
-## Variaveis
+## Variables
 
 ```bash
 DB_HOST=127.0.0.1

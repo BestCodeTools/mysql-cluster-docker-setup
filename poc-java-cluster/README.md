@@ -1,20 +1,20 @@
-# PoC Java + MySQL Cluster
+# Java PoC + MySQL Cluster
 
-Esta PoC valida:
+This PoC validates:
 
-1. conexao com database ja provisionado
-2. migration com `Flyway`
-3. CRUD com JDBC
-4. CRUD com `Hibernate`
+1. access to an already provisioned database
+2. migrations with `Flyway`
+3. raw CRUD with `JDBC`
+4. ORM CRUD with `Hibernate`
 
-## Uso
+## Usage
 
 ```bash
 cd poc-java-cluster
 bash ./run-poc-java.sh
 ```
 
-## Variaveis
+## Variables
 
 ```bash
 DB_HOST=127.0.0.1

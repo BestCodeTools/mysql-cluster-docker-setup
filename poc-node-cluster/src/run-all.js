@@ -14,7 +14,7 @@ function runProcess(command, args, label) {
         return;
       }
 
-      reject(new Error(`${label} falhou com codigo ${code}.`));
+      reject(new Error(`${label} failed with exit code ${code}.`));
     });
 
     child.on("error", reject);
@@ -63,12 +63,12 @@ async function main() {
   ];
 
   for (const step of steps) {
-    console.log(`\n==> Executando ${step.label}`);
+    console.log(`\n==> Running ${step.label}`);
     await step.run();
   }
 }
 
 main().catch((error) => {
-  console.error("Falha no fluxo completo:", error.message);
+  console.error("End-to-end flow failed:", error.message);
   process.exit(1);
 });

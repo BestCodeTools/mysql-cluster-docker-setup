@@ -28,31 +28,31 @@ remove_container_if_exists() {
   local name="$1"
 
   if container_exists "$name"; then
-    log "Removendo container $name."
+    log "Removing container $name."
     docker rm -f "$name" >/dev/null
     return 0
   fi
 
-  log "Container $name nao existe, nada para remover."
+  log "Container $name does not exist, nothing to remove."
 }
 
 remove_network_if_requested() {
   if [[ "$REMOVE_NETWORK" != "true" ]]; then
-    log "Rede $NETWORK_NAME preservada porque REMOVE_NETWORK=$REMOVE_NETWORK."
+    log "Network $NETWORK_NAME preserved because REMOVE_NETWORK=$REMOVE_NETWORK."
     return 0
   fi
 
   if docker network inspect "$NETWORK_NAME" >/dev/null 2>&1; then
-    log "Removendo rede $NETWORK_NAME."
+    log "Removing network $NETWORK_NAME."
     docker network rm "$NETWORK_NAME" >/dev/null
     return 0
   fi
 
-  log "Rede $NETWORK_NAME nao existe, nada para remover."
+  log "Network $NETWORK_NAME does not exist, nothing to remove."
 }
 
 show_remaining_cluster_state() {
-  log "Estado restante com nomes do cluster:"
+  log "Remaining state for cluster-named resources:"
   docker ps -a \
     --filter "name=^/${MANAGER_NAME}$" \
     --filter "name=^/${NDB1_NAME}$" \
@@ -63,18 +63,18 @@ show_remaining_cluster_state() {
 
 main() {
   command -v docker >/dev/null 2>&1 || {
-    printf 'Comando obrigatorio nao encontrado: docker\n' >&2
+    printf 'Required command not found: docker\n' >&2
     exit 1
   }
 
-  log "Parando e removendo containers do cluster."
+  log "Stopping and removing cluster containers."
   for name in "${CLUSTER_CONTAINERS[@]}"; do
     remove_container_if_exists "$name"
   done
 
   remove_network_if_requested
   show_remaining_cluster_state
-  log "Cluster finalizado."
+  log "Cluster shutdown complete."
 }
 
 main "$@"

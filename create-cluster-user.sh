@@ -17,36 +17,36 @@ log() {
 
 usage() {
   cat <<'EOF'
-Uso:
+Usage:
   bash ./create-cluster-user.sh <user> <password> [database]
 
-Parametros:
-  user       Nome do usuario a ser criado
-  password   Senha do usuario
-  database   Banco que recebera grants. Default: * (todos)
+Parameters:
+  user       User name to create
+  password   User password
+  database   Database that receives grants. Default: * (all)
 
-Variaveis opcionais:
-  MYSQL_NAME             Container MySQL do cluster. Default: mysql1
-  MYSQL_ROOT_PASSWORD    Senha do root. Default: ClusterRoot123!
-  TARGET_HOST            Host do usuario no MySQL. Default: %
-  GRANT_PRIVILEGES       Privilegios concedidos. Default: ALL PRIVILEGES
-  AUTH_PLUGIN            Plugin de autenticacao. Default: mysql_native_password
+Optional variables:
+  MYSQL_NAME             Cluster MySQL container. Default: mysql1
+  MYSQL_ROOT_PASSWORD    Root password. Default: ClusterRoot123!
+  TARGET_HOST            MySQL host for the user. Default: %
+  GRANT_PRIVILEGES       Granted privileges. Default: ALL PRIVILEGES
+  AUTH_PLUGIN            Authentication plugin. Default: mysql_native_password
 
-Exemplos:
-  bash ./create-cluster-user.sh app_user 'Senha123!' app_db
-  TARGET_HOST=127.0.0.1 bash ./create-cluster-user.sh local_user 'Senha123!' app_db
-  GRANT_PRIVILEGES='SELECT,INSERT,UPDATE,DELETE' bash ./create-cluster-user.sh api_user 'Senha123!' app_db
+Examples:
+  bash ./create-cluster-user.sh app_user 'Password123!' app_db
+  TARGET_HOST=127.0.0.1 bash ./create-cluster-user.sh local_user 'Password123!' app_db
+  GRANT_PRIVILEGES='SELECT,INSERT,UPDATE,DELETE' bash ./create-cluster-user.sh api_user 'Password123!' app_db
 EOF
 }
 
 require_ready_container() {
   docker container inspect "$MYSQL_NAME" >/dev/null 2>&1 || {
-    printf 'Container %s nao existe.\n' "$MYSQL_NAME" >&2
+    printf 'Container %s does not exist.\n' "$MYSQL_NAME" >&2
     exit 1
   }
 
   [[ "$(docker inspect -f '{{.State.Running}}' "$MYSQL_NAME")" == "true" ]] || {
-    printf 'Container %s nao esta em execucao.\n' "$MYSQL_NAME" >&2
+    printf 'Container %s is not running.\n' "$MYSQL_NAME" >&2
     exit 1
   }
 }
@@ -62,7 +62,7 @@ grant_scope() {
 
 main() {
   command -v docker >/dev/null 2>&1 || {
-    printf 'Comando obrigatorio nao encontrado: docker\n' >&2
+    printf 'Required command not found: docker\n' >&2
     exit 1
   }
 
@@ -76,7 +76,7 @@ main() {
   local scope
   scope="$(grant_scope)"
 
-  log "Criando usuario $DB_USER@$TARGET_HOST no container $MYSQL_NAME."
+  log "Creating user $DB_USER@$TARGET_HOST in container $MYSQL_NAME."
   docker exec "$MYSQL_NAME" mysql -uroot "-p$MYSQL_ROOT_PASSWORD" -e "
     CREATE USER IF NOT EXISTS '${DB_USER}'@'${TARGET_HOST}' IDENTIFIED WITH ${AUTH_PLUGIN} BY '${DB_PASSWORD}';
     ALTER USER '${DB_USER}'@'${TARGET_HOST}' IDENTIFIED WITH ${AUTH_PLUGIN} BY '${DB_PASSWORD}';
@@ -84,7 +84,7 @@ main() {
     FLUSH PRIVILEGES;
   " >/dev/null
 
-  log "Usuario $DB_USER@$TARGET_HOST pronto com grants em ${scope}."
+  log "User $DB_USER@$TARGET_HOST is ready with grants on ${scope}."
 }
 
 main "$@"
