@@ -1,0 +1,81 @@
+name: MySQL Cluster Validation
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+env:
+  MYSQL_ROOT_PASSWORD: ClusterRoot123!
+  APP_DB_USER: cluster_app
+  APP_DB_PASSWORD: ClusterApp123!
+  VALIDATION_DB_NAME: gha_cluster_validation
+  VALIDATION_DB_USER: gha_cluster_user
+  VALIDATION_DB_PASSWORD: GhaClusterPass123!
+
+jobs:
+  validate-cluster:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: poc-node-cluster/package-lock.json
+
+      - name: Make scripts executable
+        run: |
+          chmod +x ./start-mysql-cluster.sh
+          chmod +x ./stop-mysql-cluster.sh
+          chmod +x ./create-cluster-database.sh
+          chmod +x ./create-cluster-user.sh
+
+      - name: Install PoC dependencies
+        working-directory: ./poc-node-cluster
+        run: npm ci
+
+      - name: Start MySQL Cluster
+        run: ./start-mysql-cluster.sh
+
+      - name: Create validation database
+        run: ./create-cluster-database.sh "$VALIDATION_DB_NAME"
+
+      - name: Create validation user
+        run: ./create-cluster-user.sh "$VALIDATION_DB_USER" "$VALIDATION_DB_PASSWORD" "$VALIDATION_DB_NAME"
+
+      - name: Show cluster status
+        run: docker run --rm --net cluster mysql/mysql-cluster ndb_mgm -c 192.168.0.2 -e show
+
+      - name: Validate Node.js access, migrations and CRUD
+        working-directory: ./poc-node-cluster
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USER: ${{ env.VALIDATION_DB_USER }}
+          DB_PASSWORD: ${{ env.VALIDATION_DB_PASSWORD }}
+          DB_NAME: ${{ env.VALIDATION_DB_NAME }}
+        run: node ./src/run-all.js
+
+      - name: Print container status on failure
+        if: failure()
+        run: docker ps -a
+
+      - name: Print container logs on failure
+        if: failure()
+        run: |
+          docker logs management1 || true
+          docker logs ndb1 || true
+          docker logs ndb2 || true
+          docker logs mysql1 || true
+
+      - name: Stop MySQL Cluster
+        if: always()
+        run: ./stop-mysql-cluster.sh

@@ -53,6 +53,10 @@ async function main() {
       run: () => runNodeScript("./sequelize-check.js", "sequelize:check")
     },
     {
+      label: "integration:check",
+      run: () => runNodeScript("./integration-check.js", "integration:check")
+    },
+    {
       label: "verify",
       run: () => runNodeScript("./verify-ndb-table.js", "verify")
     }

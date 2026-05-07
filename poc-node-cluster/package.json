@@ -8,6 +8,7 @@
     "db:prepare": "node ./src/prepare-database.js",
     "migrate": "knex --knexfile knexfile.cjs migrate:latest",
     "sequelize:check": "node ./src/sequelize-check.js",
+    "integration:check": "node ./src/integration-check.js",
     "verify": "node ./src/verify-ndb-table.js",
     "test:all": "node ./src/run-all.js"
   },
