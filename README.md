@@ -60,16 +60,18 @@ The script does the following:
 9. Waits for all containers to become `healthy`
 10. Creates a remote application user
 11. Prints examples for the database and user helper scripts
+12. Generates a cluster config file that matches the selected subnet and node IPs
 
 ## Default resources
 
 By default the cluster uses:
 
 - Docker network: `cluster`
-- Management node: `management1` at `192.168.0.2`
-- Data node 1: `ndb1` at `192.168.0.3`
-- Data node 2: `ndb2` at `192.168.0.4`
-- MySQL server: `mysql1` at `192.168.0.10`
+- Docker subnet: `10.66.0.0/24`
+- Management node: `management1` at `10.66.0.2`
+- Data node 1: `ndb1` at `10.66.0.3`
+- Data node 2: `ndb2` at `10.66.0.4`
+- MySQL server: `mysql1` at `10.66.0.10`
 - Published host port: `3306`
 
 ## Default credentials
@@ -101,6 +103,7 @@ Supported startup variables:
 - `NETWORK_NAME`
 - `SUBNET_CIDR`
 - `IMAGE_NAME`
+- `RUNTIME_DIR`
 - `MANAGER_NAME`
 - `MANAGER_IP`
 - `NDB1_NAME`
@@ -119,6 +122,20 @@ Example without publishing port `3306`:
 ```bash
 PUBLISH_MYSQL_PORT=false bash ./start-mysql-cluster.sh
 ```
+
+Example using an explicit safe subnet and port:
+
+```bash
+SUBNET_CIDR=10.66.0.0/24 \
+MANAGER_IP=10.66.0.2 \
+NDB1_IP=10.66.0.3 \
+NDB2_IP=10.66.0.4 \
+MYSQL_IP=10.66.0.10 \
+MYSQL_PORT=3307 \
+bash ./start-mysql-cluster.sh
+```
+
+The startup script now generates a `mysql-cluster.cnf` file automatically inside `.cluster-runtime/` so the manager configuration always matches the chosen subnet and node IPs.
 
 ## Create databases and users
 
@@ -366,7 +383,7 @@ You should see `management1`, `ndb1`, `ndb2`, and `mysql1` with `healthy` status
 ### Management client
 
 ```bash
-docker run --rm --net cluster mysql/mysql-cluster ndb_mgm -c 192.168.0.2 -e show
+docker run --rm --net cluster mysql/mysql-cluster ndb_mgm -c 10.66.0.2 -e show
 ```
 
 You should see:

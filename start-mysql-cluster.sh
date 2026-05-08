@@ -3,20 +3,21 @@
 set -Eeuo pipefail
 
 NETWORK_NAME="${NETWORK_NAME:-cluster}"
-SUBNET_CIDR="${SUBNET_CIDR:-192.168.0.0/16}"
+SUBNET_CIDR="${SUBNET_CIDR:-10.66.0.0/24}"
 IMAGE_NAME="${IMAGE_NAME:-mysql/mysql-cluster}"
+RUNTIME_DIR="${RUNTIME_DIR:-.cluster-runtime}"
 
 MANAGER_NAME="${MANAGER_NAME:-management1}"
-MANAGER_IP="${MANAGER_IP:-192.168.0.2}"
+MANAGER_IP="${MANAGER_IP:-10.66.0.2}"
 
 NDB1_NAME="${NDB1_NAME:-ndb1}"
-NDB1_IP="${NDB1_IP:-192.168.0.3}"
+NDB1_IP="${NDB1_IP:-10.66.0.3}"
 
 NDB2_NAME="${NDB2_NAME:-ndb2}"
-NDB2_IP="${NDB2_IP:-192.168.0.4}"
+NDB2_IP="${NDB2_IP:-10.66.0.4}"
 
 MYSQL_NAME="${MYSQL_NAME:-mysql1}"
-MYSQL_IP="${MYSQL_IP:-192.168.0.10}"
+MYSQL_IP="${MYSQL_IP:-10.66.0.10}"
 MYSQL_PORT="${MYSQL_PORT:-3306}"
 MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-ClusterRoot123!}"
 APP_DB_USER="${APP_DB_USER:-cluster_app}"
@@ -31,6 +32,8 @@ CLUSTER_CONTAINERS=(
   "$NDB2_NAME"
   "$MYSQL_NAME"
 )
+
+CLUSTER_CONFIG_FILE=""
 
 log() {
   printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
@@ -76,6 +79,49 @@ require_command() {
     printf 'Required command not found: %s\n' "$1" >&2
     exit 1
   }
+}
+
+runtime_dir_abs() {
+  mkdir -p "$RUNTIME_DIR"
+  cd "$RUNTIME_DIR" >/dev/null 2>&1
+  pwd
+}
+
+network_subnet() {
+  docker network inspect "$NETWORK_NAME" -f '{{(index .IPAM.Config 0).Subnet}}' 2>/dev/null || true
+}
+
+generate_cluster_config() {
+  local runtime_dir
+  runtime_dir="$(runtime_dir_abs)"
+  CLUSTER_CONFIG_FILE="$runtime_dir/mysql-cluster.cnf"
+
+  cat >"$CLUSTER_CONFIG_FILE" <<EOF
+[NDBD DEFAULT]
+NoOfReplicas=2
+DataMemory=80M
+IndexMemory=18M
+
+[TCP DEFAULT]
+
+[NDB_MGMD]
+NodeId=1
+HostName=$MANAGER_IP
+
+[NDBD]
+NodeId=2
+HostName=$NDB1_IP
+
+[NDBD]
+NodeId=3
+HostName=$NDB2_IP
+
+[MYSQLD]
+NodeId=4
+HostName=$MYSQL_IP
+EOF
+
+  log "Generated cluster config at $CLUSTER_CONFIG_FILE."
 }
 
 wait_for_running() {
@@ -131,7 +177,18 @@ wait_for_healthy() {
 
 ensure_network() {
   if docker network inspect "$NETWORK_NAME" >/dev/null 2>&1; then
-    log "Network $NETWORK_NAME already exists."
+    local existing_subnet
+    existing_subnet="$(network_subnet)"
+
+    if [[ "$existing_subnet" == "$SUBNET_CIDR" ]]; then
+      log "Network $NETWORK_NAME already exists."
+      return 0
+    fi
+
+    log "Network $NETWORK_NAME exists with subnet $existing_subnet and will be recreated for $SUBNET_CIDR."
+    docker network rm "$NETWORK_NAME" >/dev/null
+    log "Creating network $NETWORK_NAME ($SUBNET_CIDR)."
+    docker network create "$NETWORK_NAME" --subnet "$SUBNET_CIDR" >/dev/null
     return 0
   fi
 
@@ -161,17 +218,20 @@ stop_fivem_mysql_if_needed() {
 
 run_manager() {
   log "Starting management node."
-  docker run -d \
+  docker create \
     --net "$NETWORK_NAME" \
     --name "$MANAGER_NAME" \
     --ip "$MANAGER_IP" \
-    --health-cmd='sh -c "ndb_mgm -e show >/dev/null 2>&1"' \
+    --health-cmd="sh -c 'ndb_mgm -c $MANAGER_IP -e show >/dev/null 2>&1'" \
     --health-interval=10s \
-    --health-timeout=5s \
+    --health-timeout=10s \
     --health-retries=12 \
-    --health-start-period=15s \
+    --health-start-period=10s \
     "$IMAGE_NAME" \
-    ndb_mgmd >/dev/null
+    ndb_mgmd -f /etc/mysql-cluster.cnf >/dev/null
+
+  docker cp "$CLUSTER_CONFIG_FILE" "$MANAGER_NAME:/etc/mysql-cluster.cnf" >/dev/null
+  docker start "$MANAGER_NAME" >/dev/null
 }
 
 run_data_node() {
@@ -189,7 +249,7 @@ run_data_node() {
     --health-retries=12 \
     --health-start-period=20s \
     "$IMAGE_NAME" \
-    ndbd >/dev/null
+    ndbd "--ndb-connectstring=$MANAGER_IP" >/dev/null
 }
 
 run_mysql_server() {
@@ -211,7 +271,7 @@ run_mysql_server() {
     --health-retries=20 \
     --health-start-period=30s \
     "$IMAGE_NAME" \
-    mysqld >/dev/null
+    mysqld "--ndb-connectstring=$MANAGER_IP" >/dev/null
 }
 
 configure_app_user() {
@@ -247,6 +307,7 @@ main() {
 
   stop_fivem_mysql_if_needed
   cleanup_cluster
+  generate_cluster_config
   ensure_network
 
   run_manager
